@@ -1,0 +1,3307 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+  <meta name="theme-color" content="#fff0f6">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Orologio Magico">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="description" content="Applicazione educativa interattiva per bambini per imparare a leggere l'orologio analogico, AM/PM e i momenti della giornata.">
+  <title>Orologio Magico - Impara l'Orologio</title>
+
+  <!-- Favicon SVG inline giocosa -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='46' fill='%23fff9fc' stroke='%239d4edd' stroke-width='8'/%3E%3Cline x1='50' y1='50' x2='50' y2='20' stroke='%232563eb' stroke-width='7' stroke-linecap='round'/%3E%3Cline x1='50' y1='50' x2='73' y2='50' stroke='%23ff4d6d' stroke-width='8' stroke-linecap='round'/%3E%3Ccircle cx='50' cy='50' r='7' fill='%23ffbe0b'/%3E%3C/svg%3E">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='42' fill='%23fff0f6'/%3E%3Ccircle cx='90' cy='90' r='70' fill='%23ffffff' stroke='%239d4edd' stroke-width='11'/%3E%3Cline x1='90' y1='90' x2='90' y2='40' stroke='%232563eb' stroke-width='9' stroke-linecap='round'/%3E%3Cline x1='90' y1='90' x2='130' y2='90' stroke='%23ff4d6d' stroke-width='11' stroke-linecap='round'/%3E%3Ccircle cx='90' cy='90' r='10' fill='%23ffbe0b'/%3E%3C/svg%3E">
+
+  <style>
+    /* ==========================================================================
+       DESIGN TOKENS & PALETTE PASTELLO PER BAMBINI (6 ANNI)
+       ========================================================================== */
+    :root {
+      --color-hour: #ff4d6d;        /* Rosa fragola vivace per le ore */
+      --color-hour-soft: #ffe5ec;
+      --color-hour-border: #ffb3c6;
+      --color-minute: #2563eb;      /* Blu cielo brillante per i minuti */
+      --color-minute-soft: #e0f2fe;
+      --color-minute-border: #93c5fd;
+      --color-second: #f59e0b;      /* Giallo sole per i secondi */
+      --color-second-soft: #fef3c7;
+
+      --color-magic: #8338ec;       /* Viola magico per accenti */
+      --color-magic-soft: #f3e8ff;
+
+      --bg-app: #fff6fa;
+      --bg-card: #ffffff;
+      --bg-muted: #fdf2f8;
+      --text-main: #2b2d42;
+      --text-secondary: #5c5470;
+      --text-muted: #7f7996;
+
+      --color-success: #16a34a;
+      --color-success-soft: #dcfce7;
+      --color-warning: #d97706;
+      --color-warning-soft: #fef3c7;
+      --color-star: #fbbf24;
+
+      --border-subtle: #f3d5e5;
+      --shadow-sm: 0 3px 10px rgba(157, 78, 221, 0.07);
+      --shadow-md: 0 8px 24px rgba(157, 78, 221, 0.11);
+
+      --radius-sm: 12px;
+      --radius-md: 18px;
+      --radius-lg: 24px;
+      --radius-full: 9999px;
+
+      --font-sans: 'Nunito', 'Quicksand', 'Comic Sans MS', 'SF Pro Rounded', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: auto;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      min-height: 100vh;
+      background-color: var(--bg-app);
+      background-image:
+        radial-gradient(circle at 12% 14%, rgba(255, 182, 193, 0.28) 0%, transparent 32%),
+        radial-gradient(circle at 88% 20%, rgba(186, 230, 253, 0.35) 0%, transparent 34%),
+        radial-gradient(circle at 50% 88%, rgba(243, 232, 255, 0.45) 0%, transparent 40%);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      overflow-x: clip;
+      touch-action: pan-y;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    input, select, textarea {
+      user-select: text;
+      -webkit-user-select: text;
+    }
+
+    .app-shell {
+      width: 100%;
+      max-width: 540px;
+      margin: 0 auto;
+      padding: max(10px, env(safe-area-inset-top)) 14px max(28px, env(safe-area-inset-bottom));
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    /* ==========================================================================
+       HEADER GIOCOSO
+       ========================================================================== */
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      background: var(--bg-card);
+      padding: 8px 12px;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      border: 2px solid var(--border-subtle);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-icon {
+      width: 34px;
+      height: 34px;
+      flex-shrink: 0;
+    }
+
+    .brand-title {
+      font-size: 1.08rem;
+      font-weight: 900;
+      background: linear-gradient(135deg, #ff4d6d, #8338ec);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      line-height: 1.1;
+    }
+
+    .top-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .star-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: linear-gradient(135deg, #fef3c7, #fde68a);
+      border: 2px solid #f59e0b;
+      color: #92400e;
+      font-weight: 900;
+      font-size: 0.96rem;
+      padding: 4px 12px;
+      border-radius: var(--radius-full);
+      box-shadow: 0 2px 0 #f59e0b;
+      transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .star-badge.bump {
+      transform: scale(1.24) rotate(-4deg);
+    }
+
+    .star-icon {
+      width: 18px;
+      height: 18px;
+      fill: #f59e0b;
+      stroke: #b45309;
+      stroke-width: 1.5;
+    }
+
+    .icon-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 38px;
+      height: 38px;
+      border-radius: var(--radius-full);
+      border: 2px solid var(--border-subtle);
+      background: var(--bg-muted);
+      color: var(--color-magic);
+      cursor: pointer;
+      transition: transform 0.12s;
+    }
+
+    .icon-btn:active {
+      transform: scale(0.92);
+    }
+
+    .icon-btn.muted {
+      color: var(--text-muted);
+      opacity: 0.65;
+    }
+
+    /* ==========================================================================
+       NAVIGAZIONE 4 MODALITÀ
+       ========================================================================== */
+    .mode-tabs {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 5px;
+      background: var(--bg-card);
+      padding: 5px;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      border: 2px solid var(--border-subtle);
+    }
+
+    .tab-btn {
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 800;
+      padding: 8px 3px;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 0.18s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      line-height: 1.15;
+    }
+
+    .tab-btn .tab-emoji {
+      font-size: 1.15rem;
+    }
+
+    .tab-btn.active {
+      background: linear-gradient(135deg, #ff4d6d, #8338ec);
+      color: #ffffff;
+      box-shadow: 0 3px 10px rgba(131, 56, 236, 0.28);
+    }
+
+    .tab-btn:not(.active):active {
+      background: var(--bg-muted);
+    }
+
+    /* ==========================================================================
+       STAGE OROLOGIO ANALOGICO (USATO IN LIVE, ESPLORA E GIOCA)
+       ========================================================================== */
+    .clock-stage {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      padding: 12px 12px 10px;
+      box-shadow: var(--shadow-md);
+      border: 2px solid var(--border-subtle);
+    }
+
+    .clock-stage.hidden {
+      display: none;
+    }
+
+    .clock-toolbar {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 6px;
+      padding: 0 2px;
+    }
+
+    .legend-pills {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .legend-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      padding: 3px 8px;
+      border-radius: var(--radius-full);
+    }
+
+    .legend-pill.hours {
+      background: var(--color-hour-soft);
+      color: var(--color-hour);
+    }
+
+    .legend-pill.minutes {
+      background: var(--color-minute-soft);
+      color: var(--color-minute);
+    }
+
+    .legend-pill.seconds {
+      background: var(--color-second-soft);
+      color: #b45309;
+    }
+
+    .legend-pill.seconds.hidden {
+      display: none;
+    }
+
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .toggle-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      font-size: 0.76rem;
+      font-weight: 800;
+      color: var(--color-minute);
+      padding: 3px 6px;
+      border-radius: var(--radius-full);
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 40px;
+      height: 22px;
+      background: #cbd5e1;
+      border-radius: var(--radius-full);
+      transition: background 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .toggle-switch::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 18px;
+      height: 18px;
+      background: #ffffff;
+      border-radius: 50%;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    input[type="checkbox"]:checked + .toggle-switch {
+      background: var(--color-minute);
+    }
+
+    input[type="checkbox"]:checked + .toggle-switch::after {
+      transform: translateX(18px);
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+    }
+
+    .clock-wrapper {
+      width: min(72vw, 295px);
+      height: min(72vw, 295px);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    @media (min-height: 760px) {
+      .clock-wrapper {
+        width: min(78vw, 325px);
+        height: min(78vw, 325px);
+      }
+    }
+
+    svg#analogClock {
+      width: 100%;
+      height: 100%;
+      display: block;
+      touch-action: none;
+      cursor: grab;
+      filter: drop-shadow(0 8px 18px rgba(157, 78, 221, 0.16));
+    }
+
+    svg#analogClock.dragging {
+      cursor: grabbing;
+    }
+
+    svg#analogClock.locked {
+      cursor: default;
+    }
+
+    .hand-glow {
+      opacity: 0;
+      transition: opacity 0.15s ease;
+    }
+
+    .hand-group.active-drag .hand-glow {
+      opacity: 0.32;
+    }
+
+    .minute-helper-group {
+      transition: opacity 0.22s ease;
+    }
+
+    .minute-helper-group.hidden-helper {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .hour-slice-group {
+      transition: opacity 0.22s ease;
+    }
+
+    .hour-slice-group.hidden-slice {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .toggles-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap;
+    }
+
+    .drag-hint {
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      margin-top: 5px;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    /* ==========================================================================
+       SEZIONE DEDICATA: LA GIORNATA, SOLE/LUNA & AM/PM
+       ========================================================================== */
+    .day-stage {
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .day-stage.active {
+      display: flex;
+    }
+
+    .sky-card {
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      padding: 10px;
+      box-shadow: var(--shadow-md);
+      border: 2px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .sky-svg-wrap {
+      width: 100%;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      border: 2px solid var(--border-subtle);
+      position: relative;
+    }
+
+    svg#skyArcSvg {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .sun-landmarks {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 5px;
+    }
+
+    .landmark-btn {
+      border: 1.5px solid var(--border-subtle);
+      background: var(--bg-muted);
+      border-radius: var(--radius-sm);
+      padding: 6px 2px;
+      font-family: inherit;
+      font-size: 0.7rem;
+      font-weight: 800;
+      color: var(--text-main);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1px;
+      transition: transform 0.12s, background 0.15s;
+    }
+
+    .landmark-btn:active {
+      transform: scale(0.95);
+    }
+
+    .day-sync-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--bg-muted);
+      padding: 8px 10px;
+      border-radius: var(--radius-md);
+      border: 1.5px solid var(--border-subtle);
+    }
+
+    .mini-clock-box {
+      width: 86px;
+      height: 86px;
+      flex-shrink: 0;
+    }
+
+    .day-time-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .day-digital-line {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .day-12h {
+      font-size: 1.35rem;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .ampm-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 0.78rem;
+      font-weight: 900;
+      padding: 2px 9px;
+      border-radius: var(--radius-full);
+    }
+
+    .ampm-pill.is-am {
+      background: #fef3c7;
+      color: #b45309;
+      border: 1.5px solid #f59e0b;
+    }
+
+    .ampm-pill.is-pm {
+      background: #ede9fe;
+      color: #6d28d9;
+      border: 1.5px solid #8b5cf6;
+    }
+
+    .day-24h-sub {
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: var(--text-secondary);
+    }
+
+    .day-story-text {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text-main);
+      line-height: 1.25;
+    }
+
+    .day-slider-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding: 0 2px;
+    }
+
+    input[type="range"].day-slider {
+      width: 100%;
+      accent-color: var(--color-magic);
+      height: 8px;
+      cursor: pointer;
+    }
+
+    .slider-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.66rem;
+      font-weight: 800;
+      color: var(--text-muted);
+    }
+
+    .routine-card {
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      padding: 12px;
+      box-shadow: var(--shadow-md);
+      border: 2px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .routine-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .routine-title {
+      font-size: 0.96rem;
+      font-weight: 900;
+      color: var(--text-main);
+      margin: 0;
+    }
+
+    .add-routine-btn {
+      border: none;
+      background: linear-gradient(135deg, #8338ec, #ff4d6d);
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 0.8rem;
+      font-weight: 800;
+      padding: 7px 12px;
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      box-shadow: 0 3px 8px rgba(131, 56, 236, 0.25);
+    }
+
+    .add-routine-btn:active {
+      transform: scale(0.95);
+    }
+
+    .custom-form {
+      display: none;
+      flex-direction: column;
+      gap: 9px;
+      background: var(--bg-muted);
+      border: 2px dashed var(--color-hour-border);
+      border-radius: var(--radius-md);
+      padding: 10px;
+    }
+
+    .custom-form.open {
+      display: flex;
+    }
+
+    .emoji-picker-grid {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 4px;
+    }
+
+    .emoji-choice {
+      border: 1.5px solid transparent;
+      background: #ffffff;
+      border-radius: 10px;
+      font-size: 1.25rem;
+      padding: 5px 0;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .emoji-choice.selected {
+      border-color: var(--color-magic);
+      background: var(--color-magic-soft);
+      transform: scale(1.08);
+    }
+
+    .form-inputs-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .text-input, .select-input {
+      font-family: inherit;
+      font-size: 0.88rem;
+      font-weight: 700;
+      padding: 8px 10px;
+      border-radius: var(--radius-sm);
+      border: 1.5px solid var(--border-subtle);
+      background: #ffffff;
+      color: var(--text-main);
+    }
+
+    .text-input {
+      flex: 1;
+      min-width: 140px;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 6px;
+      justify-content: flex-end;
+    }
+
+    .routine-list {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .routine-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      background: #ffffff;
+      border: 2px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 8px 10px;
+      cursor: pointer;
+      transition: transform 0.12s, border-color 0.15s, background 0.15s;
+    }
+
+    .routine-item:active {
+      transform: scale(0.98);
+    }
+
+    .routine-item.selected {
+      border-color: var(--color-magic);
+      background: var(--color-magic-soft);
+    }
+
+    .routine-left {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .routine-emoji {
+      font-size: 1.5rem;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-muted);
+      border-radius: 12px;
+      flex-shrink: 0;
+    }
+
+    .routine-name {
+      font-size: 0.9rem;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    .routine-sub {
+      font-size: 0.74rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+    }
+
+    .routine-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .routine-time-badge {
+      font-size: 0.8rem;
+      font-weight: 900;
+      padding: 4px 8px;
+      border-radius: var(--radius-sm);
+      background: var(--bg-muted);
+      color: var(--text-main);
+      text-align: right;
+      line-height: 1.15;
+    }
+
+    .delete-routine-btn {
+      border: none;
+      background: #fee2e2;
+      color: #dc2626;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      font-weight: 900;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ==========================================================================
+       PANNELLO INFERIORE (LIVE, ESPLORA, GIOCA)
+       ========================================================================== */
+    .panel-card {
+      background: var(--bg-card);
+      border-radius: var(--radius-lg);
+      padding: 14px;
+      box-shadow: var(--shadow-md);
+      border: 2px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      gap: 11px;
+    }
+
+    .panel-card.hidden {
+      display: none;
+    }
+
+    .panel-section {
+      display: none;
+      flex-direction: column;
+      gap: 11px;
+    }
+
+    .panel-section.active {
+      display: flex;
+    }
+
+    .digital-display-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-muted);
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+      border: 2px solid var(--border-subtle);
+      gap: 4px;
+    }
+
+    .digital-main-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .digital-time {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.2rem;
+      font-weight: 900;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .t-hour { color: var(--color-hour); }
+    .t-sep { color: var(--text-muted); margin: 0 2px; transform: translateY(-2px); }
+    .t-min { color: var(--color-minute); }
+    .t-sec { color: var(--color-second); }
+
+    .ampm-toggle-btn {
+      border: 2px solid #f59e0b;
+      background: #fef3c7;
+      color: #92400e;
+      font-family: inherit;
+      font-size: 0.86rem;
+      font-weight: 900;
+      padding: 5px 11px;
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      box-shadow: 0 2px 0 #f59e0b;
+    }
+
+    .ampm-toggle-btn.pm {
+      border-color: #7c3aed;
+      background: #ede9fe;
+      color: #5b21b6;
+      box-shadow: 0 2px 0 #7c3aed;
+    }
+
+    .digital-24h-note {
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: var(--text-secondary);
+    }
+
+    .italian-phrase-box {
+      text-align: center;
+      padding: 2px 4px;
+    }
+
+    .phrase-primary {
+      font-size: 1.12rem;
+      font-weight: 900;
+      color: var(--text-main);
+      margin: 0;
+      line-height: 1.3;
+    }
+
+    .phrase-secondary {
+      font-size: 0.84rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      margin: 3px 0 0;
+    }
+
+    .live-context-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      background: linear-gradient(135deg, #f3e8ff, #ffe5ec);
+      border: 1.5px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 9px 12px;
+      font-size: 0.84rem;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    .tick-sound-btn {
+      border: 1.5px solid var(--color-magic);
+      background: #ffffff;
+      color: var(--color-magic);
+      font-family: inherit;
+      font-size: 0.75rem;
+      font-weight: 800;
+      padding: 5px 10px;
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .tick-sound-btn.active {
+      background: var(--color-magic);
+      color: #ffffff;
+    }
+
+    /* Cielo e posizione nella giornata dentro Ora Live */
+    .live-day-box {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background: var(--bg-muted);
+      border: 2px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 9px;
+    }
+
+    .live-day-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      font-weight: 900;
+      color: var(--color-magic);
+      padding: 0 2px;
+    }
+
+    .live-sky-wrap {
+      width: 100%;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      border: 1.5px solid var(--border-subtle);
+    }
+
+    svg#liveSkyArcSvg {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    .timeline-24h-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 8px 2px 2px;
+    }
+
+    .timeline-track {
+      position: relative;
+      height: 30px;
+      border-radius: var(--radius-full);
+      background: linear-gradient(90deg,
+        #1e1b4b 0%,
+        #312e81 22%,
+        #fde68a 26%,
+        #bae6fd 50%,
+        #fed7aa 76%,
+        #312e81 82%,
+        #1e1b4b 100%);
+      border: 2px solid #ffffff;
+      box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.18);
+    }
+
+    .timeline-noon-divider {
+      position: absolute;
+      left: 50%;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: rgba(255, 255, 255, 0.75);
+      transform: translateX(-50%);
+    }
+
+    .timeline-routine-pin {
+      position: absolute;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 0.85rem;
+      line-height: 1;
+      filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
+      pointer-events: none;
+    }
+
+    .timeline-now-marker {
+      position: absolute;
+      top: -5px;
+      bottom: -5px;
+      width: 4px;
+      background: #ff4d6d;
+      border: 1.5px solid #ffffff;
+      border-radius: 4px;
+      transform: translateX(-50%);
+      box-shadow: 0 0 8px rgba(255, 77, 109, 0.9);
+      z-index: 3;
+    }
+
+    .timeline-now-tag {
+      position: absolute;
+      top: -17px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #ff4d6d;
+      color: #ffffff;
+      font-size: 0.62rem;
+      font-weight: 900;
+      padding: 1px 5px;
+      border-radius: var(--radius-full);
+      white-space: nowrap;
+    }
+
+    .timeline-legend {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.68rem;
+      font-weight: 800;
+      color: var(--text-secondary);
+    }
+
+    /* Pulsanti rapidi Esplora */
+    .quick-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .btn-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+    }
+
+    .step-btn {
+      border: 2px solid var(--border-subtle);
+      background: #ffffff;
+      color: var(--text-main);
+      font-family: inherit;
+      font-size: 0.84rem;
+      font-weight: 800;
+      padding: 9px 4px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+
+    .step-btn:active {
+      transform: scale(0.94);
+    }
+
+    .step-btn.hour-btn {
+      background: var(--color-hour-soft);
+      border-color: var(--color-hour-border);
+      color: var(--color-hour);
+    }
+
+    .step-btn.min-btn {
+      background: var(--color-minute-soft);
+      border-color: var(--color-minute-border);
+      color: var(--color-minute);
+    }
+
+    /* ==========================================================================
+       SEZIONE GIOCA (QUIZ & SFIDA PRATICA)
+       ========================================================================== */
+    .game-subtabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      background: var(--bg-muted);
+      padding: 4px;
+      border-radius: var(--radius-md);
+    }
+
+    .subtab-btn {
+      border: none;
+      background: transparent;
+      font-family: inherit;
+      font-size: 0.84rem;
+      font-weight: 800;
+      color: var(--text-secondary);
+      padding: 7px 6px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+    }
+
+    .subtab-btn.active {
+      background: #ffffff;
+      color: var(--color-magic);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+
+    .difficulty-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+    }
+
+    .diff-btn {
+      flex: 1;
+      border: 1.5px solid var(--border-subtle);
+      background: var(--bg-muted);
+      color: var(--text-secondary);
+      font-family: inherit;
+      font-size: 0.74rem;
+      font-weight: 800;
+      padding: 5px 2px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .diff-btn.active {
+      background: var(--color-hour-soft);
+      border-color: var(--color-hour);
+      color: var(--color-hour);
+    }
+
+    .game-view {
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .game-view.active {
+      display: flex;
+    }
+
+    .prompt-header {
+      text-align: center;
+      font-size: 1.05rem;
+      font-weight: 900;
+      color: var(--text-main);
+      margin: 0;
+    }
+
+    .quiz-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 9px;
+    }
+
+    .quiz-option {
+      border: 2px solid var(--border-subtle);
+      background: #ffffff;
+      border-radius: var(--radius-md);
+      padding: 13px 8px;
+      font-family: inherit;
+      font-size: 1.5rem;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      cursor: pointer;
+      box-shadow: 0 3px 0 var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .quiz-option:active:not(:disabled) {
+      transform: translateY(2px);
+    }
+
+    .quiz-option.wrong {
+      background: var(--color-warning-soft);
+      border-color: #f59e0b;
+      opacity: 0.72;
+      cursor: not-allowed;
+      animation: gentleShake 0.36s ease;
+    }
+
+    .quiz-option.correct {
+      background: var(--color-success-soft);
+      border-color: var(--color-success);
+      box-shadow: 0 3px 0 var(--color-success);
+    }
+
+    .target-banner {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: var(--bg-muted);
+      border: 2px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 9px 12px;
+      text-align: center;
+    }
+
+    .target-instruction {
+      font-size: 0.88rem;
+      font-weight: 800;
+      color: var(--text-secondary);
+    }
+
+    .target-time-large {
+      font-size: 2.1rem;
+      font-weight: 900;
+      line-height: 1.05;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .target-phrase-hint {
+      font-size: 0.82rem;
+      font-weight: 800;
+      color: var(--color-magic);
+      margin-top: 2px;
+    }
+
+    .challenge-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .primary-action-btn {
+      flex: 1;
+      border: none;
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: #ffffff;
+      font-family: inherit;
+      font-size: 1.02rem;
+      font-weight: 900;
+      padding: 13px 14px;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      box-shadow: 0 4px 0 #15803d;
+    }
+
+    .primary-action-btn:active {
+      transform: translateY(2px);
+    }
+
+    .secondary-action-btn {
+      border: 2px solid var(--border-subtle);
+      background: var(--bg-muted);
+      color: var(--text-secondary);
+      font-family: inherit;
+      font-size: 0.88rem;
+      font-weight: 800;
+      padding: 13px 14px;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+    }
+
+    .hint-action-btn {
+      border: 2px solid #fcd34d;
+      background: #fef3c7;
+      color: #92400e;
+      font-family: inherit;
+      font-size: 0.88rem;
+      font-weight: 800;
+      padding: 13px 12px;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+    }
+
+    .hint-action-btn:active,
+    .secondary-action-btn:active {
+      transform: scale(0.96);
+    }
+
+    .routine-challenge-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #ffffff;
+      border: 2px solid var(--color-hour-border);
+      color: var(--text-main);
+      font-size: 1.05rem;
+      font-weight: 900;
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      margin: 4px 0;
+    }
+
+    .feedback-box {
+      border-radius: var(--radius-md);
+      padding: 9px 12px;
+      font-size: 0.9rem;
+      font-weight: 800;
+      text-align: center;
+      line-height: 1.35;
+      display: none;
+    }
+
+    .feedback-box.visible {
+      display: block;
+    }
+
+    .feedback-box.success {
+      background: var(--color-success-soft);
+      color: #14532d;
+      border: 2px solid #86efac;
+    }
+
+    .feedback-box.hint {
+      background: var(--color-warning-soft);
+      color: #78350f;
+      border: 2px solid #fcd34d;
+    }
+
+    /* ==========================================================================
+       CORIANDOLI & TOAST CELEBRATIVO
+       ========================================================================== */
+    #confettiCanvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    .milestone-toast {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translate(-50%, -130%);
+      background: linear-gradient(135deg, #ff4d6d, #8338ec);
+      color: #ffffff;
+      font-weight: 900;
+      font-size: 0.95rem;
+      padding: 11px 18px;
+      border-radius: var(--radius-full);
+      box-shadow: 0 10px 25px rgba(131, 56, 236, 0.38);
+      z-index: 1000;
+      white-space: nowrap;
+      transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+      pointer-events: none;
+    }
+
+    .milestone-toast.show {
+      transform: translate(-50%, 0);
+    }
+
+    @keyframes gentleShake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-6px); }
+      50% { transform: translateX(6px); }
+      75% { transform: translateX(-4px); }
+    }
+
+    /* ==========================================================================
+       OTTIMIZZAZIONE SCHERMI ORIZZONTALI / SMART DISPLAY (es. Nest Hub 1024x600)
+       ========================================================================== */
+    @media (min-width: 760px) and (max-height: 680px) {
+      .app-shell {
+        max-width: 980px;
+        padding: 8px 16px 14px;
+        display: grid;
+        grid-template-columns: 330px 1fr;
+        grid-template-rows: auto auto 1fr;
+        gap: 8px 14px;
+        align-items: start;
+      }
+
+      .top-bar {
+        grid-column: 1 / -1;
+        padding: 6px 12px;
+      }
+
+      .mode-tabs {
+        grid-column: 1 / -1;
+        padding: 4px;
+      }
+
+      .tab-btn {
+        flex-direction: row;
+        justify-content: center;
+        gap: 6px;
+        padding: 6px 8px;
+        font-size: 0.84rem;
+      }
+
+      .clock-stage {
+        grid-column: 1;
+        grid-row: 3;
+        padding: 8px 10px;
+      }
+
+      .clock-wrapper {
+        width: 245px;
+        height: 245px;
+      }
+
+      .panel-card {
+        grid-column: 2;
+        grid-row: 3;
+        max-height: calc(100vh - 118px);
+        overflow-y: auto;
+        padding: 12px;
+      }
+
+      .day-stage.active {
+        grid-column: 1 / -1;
+        grid-row: 3;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        align-items: start;
+      }
+
+      .routine-card {
+        max-height: calc(100vh - 118px);
+        overflow-y: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="confettiCanvas" aria-hidden="true"></canvas>
+  <div id="milestoneToast" class="milestone-toast" role="status" aria-live="polite"></div>
+
+  <main class="app-shell">
+    <!-- HEADER -->
+    <header class="top-bar">
+      <div class="brand">
+        <svg class="brand-icon" viewBox="0 0 100 100" aria-hidden="true">
+          <circle cx="50" cy="50" r="44" fill="#fff9fc" stroke="#9d4edd" stroke-width="8"/>
+          <line x1="50" y1="50" x2="50" y2="21" stroke="#2563eb" stroke-width="7" stroke-linecap="round"/>
+          <line x1="50" y1="50" x2="73" y2="50" stroke="#ff4d6d" stroke-width="8" stroke-linecap="round"/>
+          <circle cx="50" cy="50" r="7" fill="#ffbe0b"/>
+        </svg>
+        <div class="brand-title">Orologio Magico</div>
+      </div>
+
+      <div class="top-controls">
+        <div id="starBadge" class="star-badge" title="Stelline raccolte" aria-label="Stelline raccolte">
+          <svg class="star-icon" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+          </svg>
+          <span id="starCount">0</span>
+        </div>
+
+        <button id="soundToggleBtn" class="icon-btn" type="button" aria-label="Attiva o disattiva suoni" title="Suoni">
+          <svg id="soundOnIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+          </svg>
+          <svg id="soundOffIcon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="display:none;">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <line x1="23" y1="9" x2="17" y2="15"></line>
+            <line x1="17" y1="9" x2="23" y2="15"></line>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- 4 MODALITÀ PRINCIPALI -->
+    <nav class="mode-tabs" role="tablist" aria-label="Modalità di apprendimento">
+      <button type="button" class="tab-btn active" role="tab" aria-selected="true" data-mode="live">
+        <span class="tab-emoji">🕒</span>
+        <span>Ora Live</span>
+      </button>
+      <button type="button" class="tab-btn" role="tab" aria-selected="false" data-mode="day">
+        <span class="tab-emoji">☀️</span>
+        <span>La Giornata</span>
+      </button>
+      <button type="button" class="tab-btn" role="tab" aria-selected="false" data-mode="explore">
+        <span class="tab-emoji">🧸</span>
+        <span>Esplora</span>
+      </button>
+      <button type="button" class="tab-btn" role="tab" aria-selected="false" data-mode="play">
+        <span class="tab-emoji">⭐</span>
+        <span>Gioca</span>
+      </button>
+    </nav>
+
+    <!-- 1. QUADRANTE OROLOGIO ANALOGICO PRINCIPALE -->
+    <section id="clockStage" class="clock-stage" aria-label="Orologio analogico interattivo">
+      <div class="clock-toolbar">
+        <div class="legend-pills">
+          <span class="legend-pill hours"><span class="legend-dot" style="background:#ff4d6d"></span>Ore</span>
+          <span class="legend-pill minutes"><span class="legend-dot" style="background:#2563eb"></span>Minuti</span>
+          <span id="secondLegendPill" class="legend-pill seconds"><span class="legend-dot" style="background:#f59e0b"></span>Secondi</span>
+        </div>
+
+        <div class="toggles-row">
+          <label class="toggle-label" for="hourSliceToggle">
+            <span>🍕 Fetta ora</span>
+            <input type="checkbox" id="hourSliceToggle" class="sr-only" checked>
+            <span class="toggle-switch" aria-hidden="true"></span>
+          </label>
+
+          <label class="toggle-label" for="minuteHelperToggle">
+            <span>🔢 Aiuto minuti</span>
+            <input type="checkbox" id="minuteHelperToggle" class="sr-only" checked>
+            <span class="toggle-switch" aria-hidden="true"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="clock-wrapper">
+        <svg id="analogClock" viewBox="0 0 400 400" role="img" aria-label="Orologio analogico con lancette colorate">
+          <defs>
+            <radialGradient id="dialGradient" cx="50%" cy="45%" r="55%">
+              <stop offset="0%" stop-color="#ffffff"/>
+              <stop offset="85%" stop-color="#fff9fc"/>
+              <stop offset="100%" stop-color="#fce7f3"/>
+            </radialGradient>
+            <linearGradient id="bezelGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#ff758f"/>
+              <stop offset="50%" stop-color="#9d4edd"/>
+              <stop offset="100%" stop-color="#3a86ff"/>
+            </linearGradient>
+          </defs>
+
+          <!-- Ghiera esterna arcobaleno pastello -->
+          <circle cx="200" cy="200" r="195" fill="url(#bezelGradient)"/>
+          <circle cx="200" cy="200" r="183" fill="url(#dialGradient)" stroke="#ffffff" stroke-width="3"/>
+          <circle cx="200" cy="200" r="142" fill="none" stroke="#f3d5e5" stroke-width="1.5" stroke-dasharray="4 4"/>
+
+          <!-- Faccina dolce e discreta al centro del quadrante -->
+          <g opacity="0.24" pointer-events="none">
+            <circle cx="176" cy="186" r="4.5" fill="#9d4edd"/>
+            <circle cx="224" cy="186" r="4.5" fill="#9d4edd"/>
+            <ellipse cx="168" cy="195" rx="7" ry="4" fill="#ff4d6d"/>
+            <ellipse cx="232" cy="195" rx="7" ry="4" fill="#ff4d6d"/>
+            <path d="M 188 214 Q 200 225 212 214" fill="none" stroke="#9d4edd" stroke-width="3.5" stroke-linecap="round"/>
+          </g>
+
+          <!-- Spicchio colorato dell'ora corrente (dietro a numeri e lancette) -->
+          <g id="hourSliceLayer" class="hour-slice-group" pointer-events="none">
+            <path id="hourSlicePath" d="M 200 200 L 374 200 A 174 174 0 0 1 350.69 287 Z" fill="rgba(255, 77, 109, 0.14)" stroke="rgba(255, 77, 109, 0.42)" stroke-width="2" stroke-dasharray="5 4" stroke-linejoin="round"/>
+          </g>
+
+          <!-- Gruppi tacche e numeri popolati via JS -->
+          <g id="ticksLayer"></g>
+          <g id="minuteHelpersLayer" class="minute-helper-group"></g>
+          <g id="hourNumbersLayer"></g>
+
+          <!-- LANCETTA DELLE ORE (Rosa fragola #ff4d6d) -->
+          <g id="hourHandGroup" class="hand-group" transform="rotate(90 200 200)">
+            <line x1="200" y1="215" x2="200" y2="102" stroke="transparent" stroke-width="36" stroke-linecap="round"/>
+            <line class="hand-glow" x1="200" y1="215" x2="200" y2="106" stroke="#ff4d6d" stroke-width="28" stroke-linecap="round"/>
+            <line x1="200" y1="216" x2="200" y2="108" stroke="#ff4d6d" stroke-width="15" stroke-linecap="round"/>
+            <line x1="200" y1="206" x2="200" y2="114" stroke="#ffffff" stroke-width="3.2" stroke-linecap="round" opacity="0.65"/>
+          </g>
+
+          <!-- LANCETTA DEI MINUTI (Blu brillante #2563eb) -->
+          <g id="minuteHandGroup" class="hand-group" transform="rotate(0 200 200)">
+            <line x1="200" y1="220" x2="200" y2="54" stroke="transparent" stroke-width="34" stroke-linecap="round"/>
+            <line class="hand-glow" x1="200" y1="220" x2="200" y2="58" stroke="#2563eb" stroke-width="24" stroke-linecap="round"/>
+            <line x1="200" y1="222" x2="200" y2="60" stroke="#2563eb" stroke-width="9.5" stroke-linecap="round"/>
+            <line x1="200" y1="212" x2="200" y2="66" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" opacity="0.6"/>
+          </g>
+
+          <!-- LANCETTA DEI SECONDI (Giallo sole #f59e0b - attiva in Ora Live) -->
+          <g id="secondHandGroup" transform="rotate(0 200 200)">
+            <line x1="200" y1="234" x2="200" y2="44" stroke="#f59e0b" stroke-width="3.5" stroke-linecap="round"/>
+            <circle cx="200" cy="228" r="5.5" fill="#f59e0b"/>
+          </g>
+
+          <!-- Perno centrale -->
+          <circle cx="200" cy="200" r="13" fill="#8338ec"/>
+          <circle cx="200" cy="200" r="8" fill="#ffbe0b"/>
+          <circle cx="200" cy="200" r="3" fill="#ffffff"/>
+        </svg>
+      </div>
+
+      <div id="clockDragHint" class="drag-hint">L'orologio segna l'ora esatta di adesso!</div>
+    </section>
+
+    <!-- 2. SEZIONE DEDICATA: LA GIORNATA, SOLE/LUNA & AM/PM -->
+    <section id="dayStage" class="day-stage" aria-label="Il percorso del sole, AM PM e momenti della giornata">
+      <div class="sky-card">
+        <div class="sky-svg-wrap">
+          <svg id="skyArcSvg" viewBox="0 0 400 175" role="img" aria-label="Cielo con percorso del sole e della luna durante le 24 ore">
+            <defs>
+              <linearGradient id="dynamicSkyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop id="skyStopTop" offset="0%" stop-color="#38bdf8"/>
+                <stop id="skyStopBottom" offset="100%" stop-color="#bae6fd"/>
+              </linearGradient>
+            </defs>
+
+            <!-- Sfondo cielo dinamico -->
+            <rect x="0" y="0" width="400" height="175" fill="url(#dynamicSkyGrad)"/>
+
+            <!-- Stelline notturne -->
+            <g id="skyStarsGroup" opacity="0" fill="#ffffff">
+              <circle cx="48" cy="30" r="2.2"/>
+              <circle cx="95" cy="52" r="1.8"/>
+              <circle cx="145" cy="22" r="2.5"/>
+              <circle cx="200" cy="36" r="2"/>
+              <circle cx="258" cy="20" r="2.4"/>
+              <circle cx="310" cy="48" r="1.8"/>
+              <circle cx="356" cy="28" r="2.2"/>
+              <circle cx="172" cy="60" r="1.6"/>
+              <circle cx="236" cy="58" r="1.6"/>
+            </g>
+
+            <!-- Nuvole diurne -->
+            <g id="skyCloudsGroup" opacity="0.85" fill="#ffffff">
+              <path d="M 55 46 Q 63 36 74 42 Q 84 35 93 45 Q 101 47 98 55 L 52 55 Q 48 48 55 46 Z"/>
+              <path d="M 292 38 Q 302 28 313 35 Q 323 28 331 38 Q 339 41 335 48 L 289 48 Q 285 41 292 38 Z"/>
+            </g>
+
+            <!-- Arco tratteggiato del percorso del Sole/Luna -->
+            <path d="M 42 138 A 158 112 0 0 1 358 138" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="2" stroke-dasharray="5 5"/>
+
+            <!-- Etichette Orizzonte Alba / Mezzogiorno / Tramonto -->
+            <text x="42" y="130" text-anchor="middle" font-size="10" font-weight="800" fill="#ffffff" stroke="rgba(0,0,0,0.25)" stroke-width="0.5">🌅 Alba 6:00</text>
+            <text x="200" y="18" text-anchor="middle" font-size="10.5" font-weight="900" fill="#ffffff" stroke="rgba(0,0,0,0.25)" stroke-width="0.5">☀️ Mezzogiorno 12:00</text>
+            <text x="358" y="130" text-anchor="middle" font-size="10" font-weight="800" fill="#ffffff" stroke="rgba(0,0,0,0.25)" stroke-width="0.5">🌇 Tramonto 19:00</text>
+
+            <!-- Astro mobile: SOLE -->
+            <g id="sunCelestial" transform="translate(200, 26)">
+              <circle cx="0" cy="0" r="22" fill="#fde047" opacity="0.4"/>
+              <circle cx="0" cy="0" r="15" fill="#facc15" stroke="#f59e0b" stroke-width="2.5"/>
+              <circle cx="-4" cy="-3" r="1.5" fill="#92400e"/>
+              <circle cx="4" cy="-3" r="1.5" fill="#92400e"/>
+              <path d="M -4 3 Q 0 7 4 3" fill="none" stroke="#92400e" stroke-width="1.6" stroke-linecap="round"/>
+            </g>
+
+            <!-- Astro mobile: LUNA -->
+            <g id="moonCelestial" transform="translate(200, 26)" opacity="0">
+              <circle cx="0" cy="0" r="20" fill="#e0e7ff" opacity="0.28"/>
+              <path d="M -5 -13 A 14 14 0 1 0 12 9 A 11 11 0 1 1 -5 -13 Z" fill="#fef08a" stroke="#eab308" stroke-width="1.5"/>
+            </g>
+
+            <!-- Collina verde -->
+            <path d="M 0 142 Q 110 128 210 140 Q 310 150 400 136 L 400 175 L 0 175 Z" fill="#4ade80"/>
+            <path d="M 0 152 Q 160 140 400 154 L 400 175 L 0 175 Z" fill="#22c55e"/>
+          </svg>
+        </div>
+
+        <!-- Scorciatoie fasi del sole -->
+        <div class="sun-landmarks">
+          <button type="button" class="landmark-btn" data-day-mins="360">🌅 Alba<br>6:00 AM</button>
+          <button type="button" class="landmark-btn" data-day-mins="720">☀️ Mezzogiorno<br>12:00 PM</button>
+          <button type="button" class="landmark-btn" data-day-mins="1140">🌇 Tramonto<br>7:00 PM</button>
+          <button type="button" class="landmark-btn" data-day-mins="0">🌙 Mezzanotte<br>12:00 AM</button>
+        </div>
+
+        <!-- Mini orologio sincronizzato + Spiegazione AM / PM -->
+        <div class="day-sync-row">
+          <div class="mini-clock-box">
+            <svg id="miniDayClock" viewBox="0 0 200 200" aria-hidden="true">
+              <circle cx="100" cy="100" r="95" fill="#ffffff" stroke="#9d4edd" stroke-width="8"/>
+              <g id="miniClockNumbers"></g>
+              <line id="miniHourHand" x1="100" y1="106" x2="100" y2="54" stroke="#ff4d6d" stroke-width="8" stroke-linecap="round" transform="rotate(210 100 100)"/>
+              <line id="miniMinHand" x1="100" y1="108" x2="100" y2="30" stroke="#2563eb" stroke-width="5.5" stroke-linecap="round" transform="rotate(0 100 100)"/>
+              <circle cx="100" cy="100" r="7" fill="#ffbe0b"/>
+            </svg>
+          </div>
+
+          <div class="day-time-info">
+            <div class="day-digital-line">
+              <span class="day-12h"><span id="dayHour12" class="t-hour">07</span><span class="t-sep">:</span><span id="dayMin12" class="t-min">00</span></span>
+              <span id="dayAmPmPill" class="ampm-pill is-am">AM • Mattina</span>
+            </div>
+            <div id="day24hSub" class="day-24h-sub">Orologio 24 ore: 07:00</div>
+            <div id="dayStoryText" class="day-story-text">Il sole è appena sorto: è mattina (AM)!</div>
+          </div>
+        </div>
+
+        <!-- Cursore 24 ore per far scorrere il sole e la luna -->
+        <div class="day-slider-wrap">
+          <input type="range" id="dayTimeSlider" class="day-slider" min="0" max="1435" step="5" value="420" aria-label="Scorri le 24 ore della giornata">
+          <div class="slider-labels">
+            <span>00:00 (12 AM)</span>
+            <span>06:00 Alba</span>
+            <span>12:00 (12 PM)</span>
+            <span>19:00 Sera</span>
+            <span>23:55</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- LISTA ATTIVITÀ QUOTIDIANE + AGGIUNGI PERSONALIZZATA -->
+      <div class="routine-card">
+        <div class="routine-header">
+          <h2 class="routine-title">📅 I momenti della giornata</h2>
+          <button type="button" id="toggleCustomFormBtn" class="add-routine-btn">+ Aggiungi</button>
+        </div>
+
+        <!-- Form creazione attività con icona personalizzata -->
+        <form id="customRoutineForm" class="custom-form">
+          <div style="font-size:0.8rem; font-weight:800; color:var(--color-magic);">1. Scegli un'icona:</div>
+          <div id="emojiPickerGrid" class="emoji-picker-grid"></div>
+
+          <div style="font-size:0.8rem; font-weight:800; color:var(--color-magic);">2. Scrivi il nome e scegli l'ora:</div>
+          <div class="form-inputs-row">
+            <input type="text" id="customTitleInput" class="text-input" placeholder="Es. Lezione di danza..." maxlength="32" required>
+            <select id="customHourSelect" class="select-input" aria-label="Ora"></select>
+            <select id="customMinSelect" class="select-input" aria-label="Minuti"></select>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" id="cancelCustomBtn" class="secondary-action-btn" style="padding:7px 12px; font-size:0.8rem;">Annulla</button>
+            <button type="submit" class="add-routine-btn" style="padding:8px 16px;">Salva attività ✓</button>
+          </div>
+        </form>
+
+        <div id="routineList" class="routine-list"></div>
+      </div>
+    </section>
+
+    <!-- 3. PANNELLO CONTROLLI PER ORA LIVE, ESPLORA E GIOCA -->
+    <section id="mainPanelCard" class="panel-card">
+      <!-- PANNELLO A: ORA LIVE IN DIRETTA -->
+      <div id="panelLive" class="panel-section active">
+        <div class="digital-display-box">
+          <div class="digital-main-row">
+            <div class="digital-time" aria-live="off">
+              <span id="liveHourText" class="t-hour">09</span>
+              <span class="t-sep">:</span>
+              <span id="liveMinText" class="t-min">47</span>
+              <span class="t-sep">:</span>
+              <span id="liveSecText" class="t-sec">00</span>
+            </div>
+            <span id="liveAmPmBadge" class="ampm-pill is-pm">PM</span>
+          </div>
+          <div id="live24hNote" class="digital-24h-note">Formato 24 ore: 21:47:00</div>
+        </div>
+
+        <div class="italian-phrase-box">
+          <p id="livePhrasePrimary" class="phrase-primary">Sono le nove e quarantasette di sera</p>
+          <p id="livePhraseSecondary" class="phrase-secondary"></p>
+        </div>
+
+        <div class="live-context-banner">
+          <span id="liveRoutineHint">🌙 È sera: ci avviciniamo alla nanna!</span>
+          <button type="button" id="liveTickToggleBtn" class="tick-sound-btn">Tic-tac 🔇</button>
+        </div>
+
+        <!-- Dove ci troviamo adesso nella giornata (Sole/Luna + Linea del tempo 24h) -->
+        <div class="live-day-box">
+          <div class="live-day-header">
+            <span>🌍 Dove siamo nella giornata</span>
+            <span id="liveSkyPeriodLabel">Sera / Notte</span>
+          </div>
+
+          <div class="live-sky-wrap">
+            <svg id="liveSkyArcSvg" viewBox="0 0 400 132" role="img" aria-label="Posizione attuale del sole o della luna nel cielo">
+              <defs>
+                <linearGradient id="liveDynamicSkyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop id="liveSkyStopTop" offset="0%" stop-color="#0f172a"/>
+                  <stop id="liveSkyStopBottom" offset="100%" stop-color="#312e81"/>
+                </linearGradient>
+              </defs>
+
+              <rect x="0" y="0" width="400" height="132" fill="url(#liveDynamicSkyGrad)"/>
+
+              <g id="liveSkyStarsGroup" opacity="0.9" fill="#ffffff">
+                <circle cx="48" cy="24" r="2"/>
+                <circle cx="102" cy="40" r="1.6"/>
+                <circle cx="152" cy="18" r="2.2"/>
+                <circle cx="248" cy="18" r="2.2"/>
+                <circle cx="305" cy="38" r="1.6"/>
+                <circle cx="356" cy="22" r="2"/>
+              </g>
+
+              <g id="liveSkyCloudsGroup" opacity="0" fill="#ffffff">
+                <path d="M 55 34 Q 63 24 74 30 Q 84 23 93 33 Q 101 35 98 42 L 52 42 Q 48 36 55 34 Z"/>
+                <path d="M 292 28 Q 302 18 313 25 Q 323 18 331 28 Q 339 31 335 38 L 289 38 Q 285 31 292 28 Z"/>
+              </g>
+
+              <path d="M 44 106 A 156 82 0 0 1 356 106" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.8" stroke-dasharray="4 4"/>
+
+              <text x="44" y="99" text-anchor="middle" font-size="9" font-weight="800" fill="#ffffff">🌅 6:00</text>
+              <text x="200" y="15" text-anchor="middle" font-size="9.5" font-weight="900" fill="#ffffff">☀️ 12:00</text>
+              <text x="356" y="99" text-anchor="middle" font-size="9" font-weight="800" fill="#ffffff">🌇 19:00</text>
+
+              <!-- Sole Live -->
+              <g id="liveSunCelestial" transform="translate(200, 24)" opacity="0">
+                <circle cx="0" cy="0" r="19" fill="#fde047" opacity="0.4"/>
+                <circle cx="0" cy="0" r="13" fill="#facc15" stroke="#f59e0b" stroke-width="2"/>
+                <circle cx="-3.5" cy="-2.5" r="1.3" fill="#92400e"/>
+                <circle cx="3.5" cy="-2.5" r="1.3" fill="#92400e"/>
+                <path d="M -3.5 2.5 Q 0 6 3.5 2.5" fill="none" stroke="#92400e" stroke-width="1.5" stroke-linecap="round"/>
+              </g>
+
+              <!-- Luna Live -->
+              <g id="liveMoonCelestial" transform="translate(200, 24)" opacity="1">
+                <circle cx="0" cy="0" r="17" fill="#e0e7ff" opacity="0.28"/>
+                <path d="M -4 -11 A 12 12 0 1 0 10 8 A 9.5 9.5 0 1 1 -4 -11 Z" fill="#fef08a" stroke="#eab308" stroke-width="1.4"/>
+              </g>
+
+              <!-- Collina -->
+              <path d="M 0 108 Q 110 96 210 106 Q 310 114 400 104 L 400 132 L 0 132 Z" fill="#4ade80"/>
+              <path d="M 0 116 Q 160 106 400 118 L 400 132 L 0 132 Z" fill="#22c55e"/>
+            </svg>
+          </div>
+
+          <div class="timeline-24h-wrap">
+            <div id="liveTimelineTrack" class="timeline-track">
+              <div class="timeline-noon-divider" title="Mezzogiorno (12:00)"></div>
+              <div id="liveTimelineMarkers"></div>
+              <div id="liveTimelineNowMarker" class="timeline-now-marker" style="left: 50%;">
+                <span class="timeline-now-tag">Adesso</span>
+              </div>
+            </div>
+            <div class="timeline-legend">
+              <span>🌙 00:00 (AM)</span>
+              <span>☀️ 12:00 (PM)</span>
+              <span>🌙 24:00</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PANNELLO B: ESPLORA (24 ORE + AM/PM) -->
+      <div id="panelExplore" class="panel-section">
+        <div class="digital-display-box">
+          <div class="digital-main-row">
+            <div class="digital-time" aria-live="polite">
+              <span id="exploreHourText" class="t-hour">03</span>
+              <span class="t-sep">:</span>
+              <span id="exploreMinText" class="t-min">00</span>
+            </div>
+            <button type="button" id="exploreAmPmBtn" class="ampm-toggle-btn pm" title="Tocca per cambiare tra AM (mattina) e PM (pomeriggio/sera)">PM ☀️</button>
+          </div>
+          <div id="explore24hNote" class="digital-24h-note">24 ore: 15:00 • Pomeriggio (dopo mezzogiorno)</div>
+        </div>
+
+        <div class="italian-phrase-box" aria-live="polite">
+          <p id="phrasePrimary" class="phrase-primary">Sono le tre del pomeriggio</p>
+          <p id="phraseSecondary" class="phrase-secondary"></p>
+        </div>
+
+        <div class="quick-controls">
+          <div class="btn-row" style="grid-template-columns: 1fr 1fr;">
+            <button type="button" class="step-btn hour-btn" data-delta="-60">-1 ora</button>
+            <button type="button" class="step-btn hour-btn" data-delta="60">+1 ora</button>
+          </div>
+          <div class="btn-row">
+            <button type="button" class="step-btn min-btn" data-delta="-15">-15m</button>
+            <button type="button" class="step-btn min-btn" data-delta="-5">-5m</button>
+            <button type="button" class="step-btn min-btn" data-delta="5">+5m</button>
+            <button type="button" class="step-btn min-btn" data-delta="15">+15m</button>
+          </div>
+          <div class="btn-row" style="grid-template-columns: 1fr 1fr;">
+            <button type="button" class="step-btn min-btn" data-delta="-1">-1 minuto</button>
+            <button type="button" class="step-btn min-btn" data-delta="1">+1 minuto</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PANNELLO C: GIOCA (QUIZ & SPOSTA LE LANCETTE) -->
+      <div id="panelPlay" class="panel-section">
+        <div class="game-subtabs">
+          <button type="button" class="subtab-btn active" data-gamemode="quiz">❓ Che ore sono?</button>
+          <button type="button" class="subtab-btn" data-gamemode="challenge">🎯 Sposta le lancette</button>
+        </div>
+
+        <div class="difficulty-bar" role="group" aria-label="Livello di difficoltà">
+          <button type="button" class="diff-btn active" data-level="1"><span>Liv. 1</span><span>:00</span></button>
+          <button type="button" class="diff-btn" data-level="2"><span>Liv. 2</span><span>:30</span></button>
+          <button type="button" class="diff-btn" data-level="3"><span>Liv. 3</span><span>Quarti</span></button>
+          <button type="button" class="diff-btn" data-level="4"><span>Liv. 4</span><span>5 min</span></button>
+          <button type="button" class="diff-btn" data-level="5"><span>Liv. 5</span><span>Tutti</span></button>
+          <button type="button" class="diff-btn" data-level="6"><span>☀️ Mia</span><span>Giornata</span></button>
+        </div>
+
+        <!-- Sub-vista 1: Quiz -->
+        <div id="quizGameView" class="game-view active">
+          <p id="quizPromptHeader" class="prompt-header">Che ore sono sull'orologio?</p>
+          <div id="quizOptionsGrid" class="quiz-grid"></div>
+          <div id="quizFeedback" class="feedback-box" role="status" aria-live="polite"></div>
+        </div>
+
+        <!-- Sub-vista 2: Sposta le lancette -->
+        <div id="challengeGameView" class="game-view">
+          <div class="target-banner">
+            <span id="targetInstruction" class="target-instruction">Sposta le lancette per impostare le:</span>
+            <div id="targetRoutineBadge" class="routine-challenge-badge" style="display:none;"></div>
+            <div id="targetTimeLarge" class="target-time-large" aria-live="polite">
+              <span id="targetHourText" class="t-hour">07</span><span class="t-sep">:</span><span id="targetMinText" class="t-min">30</span>
+            </div>
+            <div id="targetPhraseHint" class="target-phrase-hint">Sono le sette e mezza</div>
+          </div>
+
+          <div class="challenge-actions">
+            <button type="button" id="checkChallengeBtn" class="primary-action-btn">Controlla ✓</button>
+            <button type="button" id="hintChallengeBtn" class="hint-action-btn" style="display:none;">💡 Indizio</button>
+            <button type="button" id="skipChallengeBtn" class="secondary-action-btn">Cambia</button>
+          </div>
+
+          <div id="challengeFeedback" class="feedback-box" role="status" aria-live="polite"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      'use strict';
+
+      /* ========================================================================
+         1. PWA MANIFEST DINAMICO
+         ======================================================================== */
+      try {
+        const iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="#fff0f6"/><circle cx="256" cy="256" r="200" fill="#ffffff" stroke="#9d4edd" stroke-width="26"/><line x1="256" y1="256" x2="256" y2="120" stroke="#2563eb" stroke-width="24" stroke-linecap="round"/><line x1="256" y1="256" x2="365" y2="256" stroke="#ff4d6d" stroke-width="28" stroke-linecap="round"/><circle cx="256" cy="256" r="24" fill="#ffbe0b"/></svg>`;
+        const iconDataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(iconSvg);
+        const manifestObj = {
+          name: "Orologio Magico - Impara l'Orologio",
+          short_name: "Orologio",
+          description: "Impara a leggere l'orologio analogico, AM/PM e i momenti della giornata",
+          start_url: "./",
+          display: "standalone",
+          background_color: "#fff6fa",
+          theme_color: "#fff0f6",
+          icons: [
+            { src: iconDataUrl, sizes: "192x192", type: "image/svg+xml", purpose: "any" },
+            { src: iconDataUrl, sizes: "512x512", type: "image/svg+xml", purpose: "any" }
+          ]
+        };
+        const blob = new Blob([JSON.stringify(manifestObj)], { type: 'application/manifest+json' });
+        const manifestLink = document.createElement('link');
+        manifestLink.rel = 'manifest';
+        manifestLink.href = URL.createObjectURL(blob);
+        document.head.appendChild(manifestLink);
+      } catch (e) {}
+
+      /* ========================================================================
+         2. MOTORE AUDIO WEB AUDIO API (ZERO FILE ESTERNI)
+         ======================================================================== */
+      const SoundEngine = (() => {
+        let ctx = null;
+        let muted = localStorage.getItem('orologio_muted_v1') === 'true';
+
+        function ensureContext() {
+          if (muted) return null;
+          try {
+            if (!ctx) {
+              const AudioCtx = window.AudioContext || window.webkitAudioContext;
+              if (AudioCtx) ctx = new AudioCtx();
+            }
+            if (ctx && ctx.state === 'suspended') {
+              ctx.resume();
+            }
+          } catch (e) {
+            return null;
+          }
+          return ctx;
+        }
+
+        function playTone(freq, duration, type = 'sine', volume = 0.08, delay = 0) {
+          const ac = ensureContext();
+          if (!ac) return;
+          try {
+            const now = ac.currentTime + delay;
+            const osc = ac.createOscillator();
+            const gain = ac.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, now);
+            gain.gain.setValueAtTime(0.0001, now);
+            gain.gain.exponentialRampToValueAtTime(volume, now + 0.015);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+            osc.connect(gain);
+            gain.connect(ac.destination);
+            osc.start(now);
+            osc.stop(now + duration + 0.02);
+          } catch (e) {}
+        }
+
+        return {
+          isMuted: () => muted,
+          toggleMute: () => {
+            muted = !muted;
+            localStorage.setItem('orologio_muted_v1', String(muted));
+            return muted;
+          },
+          tick: () => playTone(740, 0.04, 'triangle', 0.045),
+          pop: () => playTone(520, 0.065, 'sine', 0.07),
+          success: () => {
+            playTone(523.25, 0.14, 'triangle', 0.11, 0);
+            playTone(659.25, 0.14, 'triangle', 0.11, 0.09);
+            playTone(783.99, 0.24, 'triangle', 0.12, 0.18);
+          },
+          gentleError: () => {
+            playTone(330, 0.16, 'sine', 0.08, 0);
+            playTone(293.66, 0.22, 'sine', 0.08, 0.12);
+          },
+          milestone: () => {
+            [523.25, 659.25, 783.99, 1046.5].forEach((f, idx) => {
+              playTone(f, 0.22, 'triangle', 0.12, idx * 0.09);
+            });
+          }
+        };
+      })();
+
+      /* ========================================================================
+         3. CORIANDOLI CELEBRATIVI OGNI 5 STELLINE
+         ======================================================================== */
+      const Confetti = (() => {
+        const canvas = document.getElementById('confettiCanvas');
+        const c = canvas.getContext('2d');
+        const colors = ['#ff4d6d', '#8338ec', '#3a86ff', '#ffbe0b', '#22c55e', '#fb7185'];
+        let particles = [];
+        let animId = null;
+
+        function resize() {
+          canvas.width = window.innerWidth;
+          canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resize);
+        resize();
+
+        function step() {
+          c.clearRect(0, 0, canvas.width, canvas.height);
+          particles.forEach((p) => {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += 0.22;
+            p.rot += p.vRot;
+            c.save();
+            c.translate(p.x, p.y);
+            c.rotate(p.rot);
+            c.fillStyle = p.color;
+            c.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.65);
+            c.restore();
+          });
+          particles = particles.filter((p) => p.y < canvas.height + 30);
+          if (particles.length > 0) {
+            animId = requestAnimationFrame(step);
+          } else {
+            animId = null;
+          }
+        }
+
+        return {
+          launch: () => {
+            resize();
+            for (let i = 0; i < 85; i++) {
+              particles.push({
+                x: canvas.width * 0.5 + (Math.random() - 0.5) * 140,
+                y: canvas.height * 0.35,
+                vx: (Math.random() - 0.5) * 12,
+                vy: -Math.random() * 10 - 3,
+                size: Math.random() * 8 + 6,
+                color: colors[i % colors.length],
+                rot: Math.random() * Math.PI * 2,
+                vRot: (Math.random() - 0.5) * 0.25
+              });
+            }
+            if (!animId) step();
+          }
+        };
+      })();
+
+      /* ========================================================================
+         4. FORMATTAZIONE LINGUA ITALIANA NATURALE + FASCE DELLA GIORNATA
+         ======================================================================== */
+      const ItalianTimeFormatter = (() => {
+        const hourWords = {
+          1: "l'una",
+          2: "le due",
+          3: "le tre",
+          4: "le quattro",
+          5: "le cinque",
+          6: "le sei",
+          7: "le sette",
+          8: "le otto",
+          9: "le nove",
+          10: "le dieci",
+          11: "le undici",
+          12: "le dodici"
+        };
+
+        const units = ['', 'uno', 'due', 'tre', 'quattro', 'cinque', 'sei', 'sette', 'otto', 'nove'];
+        const teens = ['dieci', 'undici', 'dodici', 'tredici', 'quattordici', 'quindici', 'sedici', 'diciassette', 'diciotto', 'diciannove'];
+        const tens = ['', '', 'venti', 'trenta', 'quaranta', 'cinquanta'];
+
+        function numberToItalian(n) {
+          if (n === 0) return 'zero';
+          if (n < 10) return units[n];
+          if (n < 20) return teens[n - 10];
+          const t = Math.floor(n / 10);
+          const u = n % 10;
+          let base = tens[t];
+          if (u === 1 || u === 8) {
+            base = base.slice(0, -1);
+          }
+          return base + units[u];
+        }
+
+        function getDayPeriod(h24) {
+          if (h24 >= 5 && h24 < 12) return { icon: '🌅', label: 'Mattina', suffix: 'di mattina' };
+          if (h24 >= 12 && h24 < 17) return { icon: '☀️', label: 'Pomeriggio', suffix: 'del pomeriggio' };
+          if (h24 >= 17 && h24 < 21) return { icon: '🌇', label: 'Sera', suffix: 'di sera' };
+          return { icon: '🌙', label: 'Notte', suffix: 'di notte' };
+        }
+
+        function format(h12, m, h24 = null) {
+          const normalizedH = ((h12 - 1 + 12) % 12) + 1;
+          const verb = normalizedH === 1 ? 'È ' : 'Sono ';
+          let hourLabel = hourWords[normalizedH];
+
+          if (h24 === 12 && m === 0) {
+            return { primary: 'È mezzogiorno in punto', secondary: 'Sono le dodici (12:00 PM)' };
+          }
+          if (h24 === 0 && m === 0) {
+            return { primary: 'È mezzanotte in punto', secondary: 'Sono le dodici di notte (12:00 AM)' };
+          }
+
+          const periodSuffix = h24 !== null ? ' ' + getDayPeriod(h24).suffix : '';
+          let primary = '';
+          let secondary = '';
+
+          if (m === 0) {
+            primary = `${verb}${hourLabel} in punto${periodSuffix}`;
+          } else if (m === 15) {
+            primary = `${verb}${hourLabel} e un quarto${periodSuffix}`;
+            secondary = `(${normalizedH} e quindici)`;
+          } else if (m === 30) {
+            primary = `${verb}${hourLabel} e mezza${periodSuffix}`;
+            secondary = `(${normalizedH} e trenta)`;
+          } else if (m === 45) {
+            const nextH = (normalizedH % 12) + 1;
+            const nextVerb = nextH === 1 ? 'È ' : 'Sono ';
+            primary = `${verb}${hourLabel} e quarantacinque${periodSuffix}`;
+            secondary = `Si dice anche: ${nextVerb}${hourWords[nextH]} meno un quarto`;
+          } else {
+            primary = `${verb}${hourLabel} e ${numberToItalian(m)}${periodSuffix}`;
+            if (m >= 40) {
+              const missing = 60 - m;
+              const nextH = (normalizedH % 12) + 1;
+              const nextVerb = nextH === 1 ? 'È ' : 'Sono ';
+              secondary = `Mancano ${numberToItalian(missing)} minuti alle ${nextH} (${nextVerb}${hourWords[nextH]} meno ${numberToItalian(missing)})`;
+            }
+          }
+
+          return { primary, secondary };
+        }
+
+        return { format, getDayPeriod };
+      })();
+
+      /* ========================================================================
+         5. ROUTINE QUOTIDIANA E STORAGE LOCALE
+         ======================================================================== */
+      const CUSTOM_ICONS = [
+        '🩰', '🏊‍♀️', '🎨', '⚽', '🚲', '📚', '🛁', '🦷',
+        '🧸', '🎂', '🍕', '🍦', '🐶', '🐱', '🦄', '🌈',
+        '🎵', '🧩', '🛝', '👵', '🚗', '✈️', '🩺', '🎁'
+      ];
+
+      const DEFAULT_ROUTINES = [
+        { id: 'r1', hour24: 7, minute: 0, title: 'Sveglia e colazione', icon: '⏰', custom: false },
+        { id: 'r2', hour24: 8, minute: 15, title: 'Si va a scuola', icon: '🎒', custom: false },
+        { id: 'r3', hour24: 12, minute: 30, title: 'Ora del pranzo', icon: '🍝', custom: false },
+        { id: 'r4', hour24: 16, minute: 30, title: 'Merenda pomeridiana', icon: '🍎', custom: false },
+        { id: 'r5', hour24: 19, minute: 30, title: 'Ora della cena', icon: '🍲', custom: false },
+        { id: 'r6', hour24: 22, minute: 0, title: 'Ora della nanna', icon: '😴', custom: false }
+      ];
+
+      function loadRoutines() {
+        try {
+          const saved = localStorage.getItem('orologio_routines_v1');
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+          }
+        } catch (e) {}
+        return DEFAULT_ROUTINES.map((r) => ({ ...r }));
+      }
+
+      function saveRoutines(list) {
+        try {
+          localStorage.setItem('orologio_routines_v1', JSON.stringify(list));
+        } catch (e) {}
+      }
+
+      /* ========================================================================
+         6. STATO APPLICAZIONE & RIFERIMENTI DOM
+         ======================================================================== */
+      const state = {
+        mode: 'live',
+        totalMinutes: 15 * 60, // 15:00 (3:00 PM) per Esplora
+        dayMinutes: 7 * 60,    // 07:00 AM iniziale per La Giornata
+        showMinuteHelper: true,
+        showHourSlice: true,
+        liveTickSound: false,
+        lastLiveSecond: -1,
+        level: 1,
+        gameSubMode: 'quiz',
+        gameHour: 3,
+        gameMinute: 0,
+        targetHour: 7,
+        targetMinute: 30,
+        activeRoutineChallenge: null,
+        lastRoutineId: null,
+        routineRoundCount: 0,
+        quizLocked: false,
+        challengeSolved: false,
+        stars: parseInt(localStorage.getItem('orologio_stars_v1') || '0', 10) || 0,
+        routines: loadRoutines(),
+        selectedEmoji: CUSTOM_ICONS[0],
+        draggingHand: null
+      };
+
+      const dom = {
+        starBadge: document.getElementById('starBadge'),
+        starCount: document.getElementById('starCount'),
+        soundToggleBtn: document.getElementById('soundToggleBtn'),
+        soundOnIcon: document.getElementById('soundOnIcon'),
+        soundOffIcon: document.getElementById('soundOffIcon'),
+        milestoneToast: document.getElementById('milestoneToast'),
+
+        tabBtns: document.querySelectorAll('.tab-btn'),
+        clockStage: document.getElementById('clockStage'),
+        dayStage: document.getElementById('dayStage'),
+        mainPanelCard: document.getElementById('mainPanelCard'),
+
+        panelLive: document.getElementById('panelLive'),
+        panelExplore: document.getElementById('panelExplore'),
+        panelPlay: document.getElementById('panelPlay'),
+
+        secondLegendPill: document.getElementById('secondLegendPill'),
+        hourSliceToggle: document.getElementById('hourSliceToggle'),
+        hourSliceLayer: document.getElementById('hourSliceLayer'),
+        hourSlicePath: document.getElementById('hourSlicePath'),
+        minuteHelperToggle: document.getElementById('minuteHelperToggle'),
+        svg: document.getElementById('analogClock'),
+        ticksLayer: document.getElementById('ticksLayer'),
+        minuteHelpersLayer: document.getElementById('minuteHelpersLayer'),
+        hourNumbersLayer: document.getElementById('hourNumbersLayer'),
+        hourHandGroup: document.getElementById('hourHandGroup'),
+        minuteHandGroup: document.getElementById('minuteHandGroup'),
+        secondHandGroup: document.getElementById('secondHandGroup'),
+        clockDragHint: document.getElementById('clockDragHint'),
+
+        // Live DOM
+        liveHourText: document.getElementById('liveHourText'),
+        liveMinText: document.getElementById('liveMinText'),
+        liveSecText: document.getElementById('liveSecText'),
+        liveAmPmBadge: document.getElementById('liveAmPmBadge'),
+        live24hNote: document.getElementById('live24hNote'),
+        livePhrasePrimary: document.getElementById('livePhrasePrimary'),
+        livePhraseSecondary: document.getElementById('livePhraseSecondary'),
+        liveRoutineHint: document.getElementById('liveRoutineHint'),
+        liveTickToggleBtn: document.getElementById('liveTickToggleBtn'),
+        liveSkyPeriodLabel: document.getElementById('liveSkyPeriodLabel'),
+        liveSkyStopTop: document.getElementById('liveSkyStopTop'),
+        liveSkyStopBottom: document.getElementById('liveSkyStopBottom'),
+        liveSkyStarsGroup: document.getElementById('liveSkyStarsGroup'),
+        liveSkyCloudsGroup: document.getElementById('liveSkyCloudsGroup'),
+        liveSunCelestial: document.getElementById('liveSunCelestial'),
+        liveMoonCelestial: document.getElementById('liveMoonCelestial'),
+        liveTimelineMarkers: document.getElementById('liveTimelineMarkers'),
+        liveTimelineNowMarker: document.getElementById('liveTimelineNowMarker'),
+
+        // Explore DOM
+        exploreHourText: document.getElementById('exploreHourText'),
+        exploreMinText: document.getElementById('exploreMinText'),
+        exploreAmPmBtn: document.getElementById('exploreAmPmBtn'),
+        explore24hNote: document.getElementById('explore24hNote'),
+        phrasePrimary: document.getElementById('phrasePrimary'),
+        phraseSecondary: document.getElementById('phraseSecondary'),
+
+        // Day / Sky DOM
+        skyStopTop: document.getElementById('skyStopTop'),
+        skyStopBottom: document.getElementById('skyStopBottom'),
+        skyStarsGroup: document.getElementById('skyStarsGroup'),
+        skyCloudsGroup: document.getElementById('skyCloudsGroup'),
+        sunCelestial: document.getElementById('sunCelestial'),
+        moonCelestial: document.getElementById('moonCelestial'),
+        miniClockNumbers: document.getElementById('miniClockNumbers'),
+        miniHourHand: document.getElementById('miniHourHand'),
+        miniMinHand: document.getElementById('miniMinHand'),
+        dayHour12: document.getElementById('dayHour12'),
+        dayMin12: document.getElementById('dayMin12'),
+        dayAmPmPill: document.getElementById('dayAmPmPill'),
+        day24hSub: document.getElementById('day24hSub'),
+        dayStoryText: document.getElementById('dayStoryText'),
+        dayTimeSlider: document.getElementById('dayTimeSlider'),
+        routineList: document.getElementById('routineList'),
+        toggleCustomFormBtn: document.getElementById('toggleCustomFormBtn'),
+        customRoutineForm: document.getElementById('customRoutineForm'),
+        emojiPickerGrid: document.getElementById('emojiPickerGrid'),
+        customTitleInput: document.getElementById('customTitleInput'),
+        customHourSelect: document.getElementById('customHourSelect'),
+        customMinSelect: document.getElementById('customMinSelect'),
+        cancelCustomBtn: document.getElementById('cancelCustomBtn'),
+
+        // Play DOM
+        subtabBtns: document.querySelectorAll('.subtab-btn'),
+        diffBtns: document.querySelectorAll('.diff-btn'),
+        quizGameView: document.getElementById('quizGameView'),
+        challengeGameView: document.getElementById('challengeGameView'),
+        quizPromptHeader: document.getElementById('quizPromptHeader'),
+        quizOptionsGrid: document.getElementById('quizOptionsGrid'),
+        quizFeedback: document.getElementById('quizFeedback'),
+        targetInstruction: document.getElementById('targetInstruction'),
+        targetRoutineBadge: document.getElementById('targetRoutineBadge'),
+        targetTimeLarge: document.getElementById('targetTimeLarge'),
+        targetHourText: document.getElementById('targetHourText'),
+        targetMinText: document.getElementById('targetMinText'),
+        targetPhraseHint: document.getElementById('targetPhraseHint'),
+        checkChallengeBtn: document.getElementById('checkChallengeBtn'),
+        hintChallengeBtn: document.getElementById('hintChallengeBtn'),
+        skipChallengeBtn: document.getElementById('skipChallengeBtn'),
+        challengeFeedback: document.getElementById('challengeFeedback')
+      };
+
+      /* ========================================================================
+         7. COSTRUZIONE QUADRANTE OROLOGIO PRINCIPALE E MINI-OROLOGIO
+         ======================================================================== */
+      function buildClockDial() {
+        const SVG_NS = 'http://www.w3.org/2000/svg';
+        const cx = 200;
+        const cy = 200;
+
+        for (let m = 0; m < 60; m++) {
+          const angleDeg = m * 6;
+          const angleRad = ((angleDeg - 90) * Math.PI) / 180;
+          const isHourMark = m % 5 === 0;
+          const rOuter = 174;
+          const rInner = isHourMark ? 158 : 165;
+
+          const tick = document.createElementNS(SVG_NS, 'line');
+          tick.setAttribute('x1', (cx + rOuter * Math.cos(angleRad)).toFixed(2));
+          tick.setAttribute('y1', (cy + rOuter * Math.sin(angleRad)).toFixed(2));
+          tick.setAttribute('x2', (cx + rInner * Math.cos(angleRad)).toFixed(2));
+          tick.setAttribute('y2', (cy + rInner * Math.sin(angleRad)).toFixed(2));
+          tick.setAttribute('stroke-linecap', 'round');
+
+          if (isHourMark) {
+            tick.setAttribute('stroke', '#8338ec');
+            tick.setAttribute('stroke-width', '4.2');
+            dom.ticksLayer.appendChild(tick);
+          } else {
+            tick.setAttribute('stroke', '#94a3b8');
+            tick.setAttribute('stroke-width', '1.8');
+            dom.minuteHelpersLayer.appendChild(tick);
+          }
+        }
+
+        for (let h = 1; h <= 12; h++) {
+          const angleDeg = h * 30;
+          const angleRad = ((angleDeg - 90) * Math.PI) / 180;
+          const rText = 132;
+          const text = document.createElementNS(SVG_NS, 'text');
+          text.setAttribute('x', (cx + rText * Math.cos(angleRad)).toFixed(2));
+          text.setAttribute('y', (cy + rText * Math.sin(angleRad)).toFixed(2));
+          text.setAttribute('text-anchor', 'middle');
+          text.setAttribute('dominant-baseline', 'central');
+          text.setAttribute('font-size', '28');
+          text.setAttribute('font-weight', '900');
+          text.setAttribute('fill', '#ff4d6d');
+          text.textContent = String(h);
+          dom.hourNumbersLayer.appendChild(text);
+
+          // Numeri anche sul mini-orologio della sezione Giornata
+          const miniText = document.createElementNS(SVG_NS, 'text');
+          miniText.setAttribute('x', (100 + 70 * Math.cos(angleRad)).toFixed(1));
+          miniText.setAttribute('y', (100 + 70 * Math.sin(angleRad)).toFixed(1));
+          miniText.setAttribute('text-anchor', 'middle');
+          miniText.setAttribute('dominant-baseline', 'central');
+          miniText.setAttribute('font-size', '15');
+          miniText.setAttribute('font-weight', '900');
+          miniText.setAttribute('fill', '#ff4d6d');
+          miniText.textContent = String(h);
+          dom.miniClockNumbers.appendChild(miniText);
+        }
+
+        for (let m = 0; m < 60; m += 5) {
+          const angleDeg = m * 6;
+          const angleRad = ((angleDeg - 90) * Math.PI) / 180;
+          const rBadge = 185;
+          const x = cx + rBadge * Math.cos(angleRad);
+          const y = cy + rBadge * Math.sin(angleRad);
+
+          const badgeBg = document.createElementNS(SVG_NS, 'circle');
+          badgeBg.setAttribute('cx', x.toFixed(2));
+          badgeBg.setAttribute('cy', y.toFixed(2));
+          badgeBg.setAttribute('r', '11.5');
+          badgeBg.setAttribute('fill', '#2563eb');
+          badgeBg.setAttribute('stroke', '#ffffff');
+          badgeBg.setAttribute('stroke-width', '1.6');
+          dom.minuteHelpersLayer.appendChild(badgeBg);
+
+          const minLabel = document.createElementNS(SVG_NS, 'text');
+          minLabel.setAttribute('x', x.toFixed(2));
+          minLabel.setAttribute('y', y.toFixed(2));
+          minLabel.setAttribute('text-anchor', 'middle');
+          minLabel.setAttribute('dominant-baseline', 'central');
+          minLabel.setAttribute('font-size', '10.5');
+          minLabel.setAttribute('font-weight', '800');
+          minLabel.setAttribute('fill', '#ffffff');
+          minLabel.textContent = String(m).padStart(2, '0');
+          dom.minuteHelpersLayer.appendChild(minLabel);
+        }
+      }
+
+      /* ========================================================================
+         8. AGGIORNAMENTO LANCETTE, FETTA DELL'ORA, VIBRAZIONE & ORA LIVE
+         ======================================================================== */
+      function pad2(num) {
+        return String(num).padStart(2, '0');
+      }
+
+      function triggerHaptic(pattern) {
+        try {
+          if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+            navigator.vibrate(pattern);
+          }
+        } catch (e) {}
+      }
+
+      function updateHourSlice(hour12) {
+        const cx = 200;
+        const cy = 200;
+        const r = 174;
+        const normalizedH = ((hour12 - 1 + 12) % 12) + 1;
+        const startDeg = (normalizedH % 12) * 30;
+        const endDeg = startDeg + 30;
+
+        const startRad = ((startDeg - 90) * Math.PI) / 180;
+        const endRad = ((endDeg - 90) * Math.PI) / 180;
+
+        const x1 = cx + r * Math.cos(startRad);
+        const y1 = cy + r * Math.sin(startRad);
+        const x2 = cx + r * Math.cos(endRad);
+        const y2 = cy + r * Math.sin(endRad);
+
+        const d = `M ${cx} ${cy} L ${x1.toFixed(2)} ${y1.toFixed(2)} A ${r} ${r} 0 0 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z`;
+        dom.hourSlicePath.setAttribute('d', d);
+      }
+
+      function setClockHands(hour12, minute, second = null) {
+        const secFraction = second !== null ? second / 60 : 0;
+        const minuteAngle = (minute + secFraction) * 6;
+        const hourAngle = (hour12 % 12) * 30 + (minute + secFraction) * 0.5;
+
+        updateHourSlice(hour12);
+        dom.minuteHandGroup.setAttribute('transform', `rotate(${minuteAngle.toFixed(2)} 200 200)`);
+        dom.hourHandGroup.setAttribute('transform', `rotate(${hourAngle.toFixed(2)} 200 200)`);
+
+        if (second !== null) {
+          dom.secondHandGroup.style.display = 'block';
+          dom.secondHandGroup.setAttribute('transform', `rotate(${second * 6} 200 200)`);
+        } else {
+          dom.secondHandGroup.style.display = 'none';
+        }
+      }
+
+      function updateLiveClock() {
+        if (state.mode !== 'live') return;
+
+        const now = new Date();
+        const h24 = now.getHours();
+        const m = now.getMinutes();
+        const s = now.getSeconds();
+        const h12 = (h24 % 12) === 0 ? 12 : (h24 % 12);
+        const isPM = h24 >= 12;
+
+        setClockHands(h12, m, s);
+
+        if (s !== state.lastLiveSecond) {
+          state.lastLiveSecond = s;
+          if (state.liveTickSound) {
+            SoundEngine.tick();
+          }
+        }
+
+        dom.liveHourText.textContent = pad2(h12);
+        dom.liveMinText.textContent = pad2(m);
+        dom.liveSecText.textContent = pad2(s);
+
+        dom.liveAmPmBadge.textContent = isPM ? 'PM • Dopo mezzogiorno' : 'AM • Prima di mezzogiorno';
+        dom.liveAmPmBadge.className = `ampm-pill ${isPM ? 'is-pm' : 'is-am'}`;
+        dom.live24hNote.textContent = `Orologio 24 ore: ${pad2(h24)}:${pad2(m)}:${pad2(s)}`;
+
+        const phrase = ItalianTimeFormatter.format(h12, m, h24);
+        dom.livePhrasePrimary.textContent = phrase.primary;
+        dom.livePhraseSecondary.textContent = phrase.secondary;
+
+        const nowMins = h24 * 60 + m;
+        let closest = state.routines[0];
+        let minDiff = 9999;
+        state.routines.forEach((r) => {
+          const rMins = r.hour24 * 60 + r.minute;
+          const diff = Math.abs(rMins - nowMins);
+          if (diff < minDiff) {
+            minDiff = diff;
+            closest = r;
+          }
+        });
+        if (closest) {
+          const period = ItalianTimeFormatter.getDayPeriod(h24);
+          dom.liveRoutineHint.textContent = `${period.icon} ${period.label} • Vicino a: ${closest.icon} ${closest.title} (${pad2(closest.hour24)}:${pad2(closest.minute)})`;
+          dom.liveSkyPeriodLabel.textContent = `${period.icon} ${period.label}`;
+        }
+
+        // Aggiorna posizione del Sole/Luna e barra 24h in Ora Live
+        const decimalHour = h24 + m / 60;
+        const cx = 200;
+        const cy = 106;
+        const rx = 156;
+        const ry = 82;
+
+        if (decimalHour >= 6 && decimalHour <= 19) {
+          const progress = (decimalHour - 6) / 13;
+          const theta = Math.PI * (1 - progress);
+          const sx = cx + rx * Math.cos(theta);
+          const sy = cy - ry * Math.sin(theta);
+
+          dom.liveSunCelestial.setAttribute('transform', `translate(${sx.toFixed(1)}, ${sy.toFixed(1)})`);
+          dom.liveSunCelestial.setAttribute('opacity', '1');
+          dom.liveMoonCelestial.setAttribute('opacity', '0');
+          dom.liveSkyStarsGroup.setAttribute('opacity', '0');
+          dom.liveSkyCloudsGroup.setAttribute('opacity', '0.88');
+
+          if (decimalHour < 7.5) {
+            dom.liveSkyStopTop.setAttribute('stop-color', '#fb7185');
+            dom.liveSkyStopBottom.setAttribute('stop-color', '#fde68a');
+          } else if (decimalHour > 17.5) {
+            dom.liveSkyStopTop.setAttribute('stop-color', '#6366f1');
+            dom.liveSkyStopBottom.setAttribute('stop-color', '#fdba74');
+          } else {
+            dom.liveSkyStopTop.setAttribute('stop-color', '#38bdf8');
+            dom.liveSkyStopBottom.setAttribute('stop-color', '#bae6fd');
+          }
+        } else {
+          const nightHours = decimalHour > 19 ? decimalHour - 19 : decimalHour + 5;
+          const progress = nightHours / 11;
+          const theta = Math.PI * (1 - progress);
+          const mx = cx + rx * Math.cos(theta);
+          const my = cy - ry * Math.sin(theta);
+
+          dom.liveMoonCelestial.setAttribute('transform', `translate(${mx.toFixed(1)}, ${my.toFixed(1)})`);
+          dom.liveMoonCelestial.setAttribute('opacity', '1');
+          dom.liveSunCelestial.setAttribute('opacity', '0');
+          dom.liveSkyStarsGroup.setAttribute('opacity', '0.92');
+          dom.liveSkyCloudsGroup.setAttribute('opacity', '0.1');
+
+          dom.liveSkyStopTop.setAttribute('stop-color', '#0f172a');
+          dom.liveSkyStopBottom.setAttribute('stop-color', '#312e81');
+        }
+
+        const pctNow = Math.min(98, Math.max(2, (nowMins / 1440) * 100));
+        dom.liveTimelineNowMarker.style.left = `${pctNow.toFixed(2)}%`;
+
+        dom.liveTimelineMarkers.innerHTML = '';
+        state.routines.forEach((r) => {
+          const rPct = ((r.hour24 * 60 + r.minute) / 1440) * 100;
+          const pin = document.createElement('span');
+          pin.className = 'timeline-routine-pin';
+          pin.style.left = `${rPct.toFixed(2)}%`;
+          pin.textContent = r.icon;
+          pin.title = `${r.title} (${pad2(r.hour24)}:${pad2(r.minute)})`;
+          dom.liveTimelineMarkers.appendChild(pin);
+        });
+      }
+
+      /* ========================================================================
+         9. MODALITÀ ESPLORA (24 ORE + AM/PM + TRASCINAMENTO LANCETTE)
+         ======================================================================== */
+      function renderExploreMode() {
+        const total = ((state.totalMinutes % 1440) + 1440) % 1440;
+        state.totalMinutes = total;
+
+        const h24 = Math.floor(total / 60);
+        const m = total % 60;
+        const h12 = (h24 % 12) === 0 ? 12 : (h24 % 12);
+        const isPM = h24 >= 12;
+        const period = ItalianTimeFormatter.getDayPeriod(h24);
+
+        setClockHands(h12, m, null);
+
+        dom.exploreHourText.textContent = pad2(h12);
+        dom.exploreMinText.textContent = pad2(m);
+
+        dom.exploreAmPmBtn.textContent = isPM ? `PM ${period.icon}` : `AM ${period.icon}`;
+        dom.exploreAmPmBtn.classList.toggle('pm', isPM);
+
+        dom.explore24hNote.textContent = `24 ore: ${pad2(h24)}:${pad2(m)} • ${period.label} (${isPM ? 'dopo' : 'prima di'} mezzogiorno)`;
+
+        const phrase = ItalianTimeFormatter.format(h12, m, h24);
+        dom.phrasePrimary.textContent = phrase.primary;
+        dom.phraseSecondary.textContent = phrase.secondary;
+      }
+
+      function addExploreMinutes(delta, playSound = true) {
+        state.totalMinutes = ((state.totalMinutes + delta) % 1440 + 1440) % 1440;
+        if (playSound) SoundEngine.tick();
+        renderExploreMode();
+      }
+
+      /* ========================================================================
+         10. SEZIONE LA GIORNATA: CIELO, SOLE/LUNA, AM/PM & ROUTINE CUSTOM
+         ======================================================================== */
+      function renderDaySkyAndClock(totalMins) {
+        const clamped = ((totalMins % 1440) + 1440) % 1440;
+        state.dayMinutes = clamped;
+        dom.dayTimeSlider.value = String(clamped);
+
+        const h24 = Math.floor(clamped / 60);
+        const m = clamped % 60;
+        const h12 = (h24 % 12) === 0 ? 12 : (h24 % 12);
+        const isPM = h24 >= 12;
+        const decimalHour = h24 + m / 60;
+
+        const minAngle = m * 6;
+        const hourAngle = (h12 % 12) * 30 + m * 0.5;
+        dom.miniMinHand.setAttribute('transform', `rotate(${minAngle} 100 100)`);
+        dom.miniHourHand.setAttribute('transform', `rotate(${hourAngle} 100 100)`);
+
+        dom.dayHour12.textContent = pad2(h12);
+        dom.dayMin12.textContent = pad2(m);
+        const period = ItalianTimeFormatter.getDayPeriod(h24);
+        dom.dayAmPmPill.textContent = `${isPM ? 'PM' : 'AM'} • ${period.label}`;
+        dom.dayAmPmPill.className = `ampm-pill ${isPM ? 'is-pm' : 'is-am'}`;
+        dom.day24hSub.textContent = `Orologio 24 ore: ${pad2(h24)}:${pad2(m)}`;
+
+        const cx = 200;
+        const cy = 138;
+        const rx = 158;
+        const ry = 112;
+
+        if (decimalHour >= 6 && decimalHour <= 19) {
+          const progress = (decimalHour - 6) / 13;
+          const theta = Math.PI * (1 - progress);
+          const sx = cx + rx * Math.cos(theta);
+          const sy = cy - ry * Math.sin(theta);
+
+          dom.sunCelestial.setAttribute('transform', `translate(${sx.toFixed(1)}, ${sy.toFixed(1)})`);
+          dom.sunCelestial.setAttribute('opacity', '1');
+          dom.moonCelestial.setAttribute('opacity', '0');
+          dom.skyStarsGroup.setAttribute('opacity', '0');
+          dom.skyCloudsGroup.setAttribute('opacity', '0.88');
+
+          if (decimalHour < 7.5) {
+            dom.skyStopTop.setAttribute('stop-color', '#fb7185');
+            dom.skyStopBottom.setAttribute('stop-color', '#fde68a');
+            dom.dayStoryText.textContent = "🌅 Alba (AM): il sole si sveglia e inizia la mattina!";
+          } else if (decimalHour > 17.5) {
+            dom.skyStopTop.setAttribute('stop-color', '#6366f1');
+            dom.skyStopBottom.setAttribute('stop-color', '#fdba74');
+            dom.dayStoryText.textContent = "🌇 Tramonto (PM): il sole saluta e arriva la sera!";
+          } else if (decimalHour >= 11.5 && decimalHour <= 13) {
+            dom.skyStopTop.setAttribute('stop-color', '#0284c7');
+            dom.skyStopBottom.setAttribute('stop-color', '#bae6fd');
+            dom.dayStoryText.textContent = "☀️ Mezzogiorno (12:00 PM): il sole è nel punto più alto del cielo!";
+          } else {
+            dom.skyStopTop.setAttribute('stop-color', '#38bdf8');
+            dom.skyStopBottom.setAttribute('stop-color', '#e0f2fe');
+            dom.dayStoryText.textContent = isPM
+              ? "☀️ Pomeriggio (PM): il sole scende piano verso il tramonto."
+              : "☀️ Mattina (AM): il sole sale alto nel cielo azzurro!";
+          }
+        } else {
+          const nightHours = decimalHour > 19 ? decimalHour - 19 : decimalHour + 5;
+          const progress = nightHours / 11;
+          const theta = Math.PI * (1 - progress);
+          const mx = cx + rx * Math.cos(theta);
+          const my = cy - ry * Math.sin(theta);
+
+          dom.moonCelestial.setAttribute('transform', `translate(${mx.toFixed(1)}, ${my.toFixed(1)})`);
+          dom.moonCelestial.setAttribute('opacity', '1');
+          dom.sunCelestial.setAttribute('opacity', '0');
+          dom.skyStarsGroup.setAttribute('opacity', '0.95');
+          dom.skyCloudsGroup.setAttribute('opacity', '0.12');
+
+          dom.skyStopTop.setAttribute('stop-color', '#0f172a');
+          dom.skyStopBottom.setAttribute('stop-color', '#312e81');
+          dom.dayStoryText.textContent = decimalHour >= 21 || decimalHour === 0
+            ? "🌙 Notte: in cielo brillano la luna e le stelle!"
+            : "🌙 Notte fonda (AM): tutti dormono prima dell'alba.";
+        }
+
+        document.querySelectorAll('.routine-item').forEach((el) => {
+          el.classList.toggle('selected', Number(el.dataset.mins) === clamped);
+        });
+      }
+
+      function renderRoutineList() {
+        state.routines.sort((a, b) => (a.hour24 * 60 + a.minute) - (b.hour24 * 60 + b.minute));
+        dom.routineList.innerHTML = '';
+
+        state.routines.forEach((item) => {
+          const mins = item.hour24 * 60 + item.minute;
+          const h12 = (item.hour24 % 12) === 0 ? 12 : (item.hour24 % 12);
+          const ampm = item.hour24 >= 12 ? 'PM' : 'AM';
+          const period = ItalianTimeFormatter.getDayPeriod(item.hour24);
+
+          const row = document.createElement('div');
+          row.className = 'routine-item';
+          row.dataset.mins = String(mins);
+          if (state.dayMinutes === mins) row.classList.add('selected');
+
+          row.innerHTML = `
+            <div class="routine-left">
+              <div class="routine-emoji">${item.icon}</div>
+              <div>
+                <div class="routine-name">${item.title}</div>
+                <div class="routine-sub">${period.icon} ${period.label}</div>
+              </div>
+            </div>
+            <div class="routine-right">
+              <div class="routine-time-badge">
+                <div style="color:var(--color-magic)">${pad2(h12)}:${pad2(item.minute)} ${ampm}</div>
+                <div style="font-size:0.7rem; color:var(--text-muted)">(${pad2(item.hour24)}:${pad2(item.minute)})</div>
+              </div>
+              ${item.custom ? `<button type="button" class="delete-routine-btn" data-del-id="${item.id}" title="Elimina" aria-label="Elimina attività">×</button>` : ''}
+            </div>
+          `;
+
+          row.addEventListener('click', (e) => {
+            if (e.target.closest('.delete-routine-btn')) return;
+            SoundEngine.pop();
+            renderDaySkyAndClock(mins);
+          });
+
+          const delBtn = row.querySelector('.delete-routine-btn');
+          if (delBtn) {
+            delBtn.addEventListener('click', (e) => {
+              e.stopPropagation();
+              state.routines = state.routines.filter((r) => r.id !== item.id);
+              saveRoutines(state.routines);
+              renderRoutineList();
+              SoundEngine.pop();
+            });
+          }
+
+          dom.routineList.appendChild(row);
+        });
+      }
+
+      function initCustomActivityForm() {
+        dom.emojiPickerGrid.innerHTML = '';
+        CUSTOM_ICONS.forEach((em) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'emoji-choice' + (em === state.selectedEmoji ? ' selected' : '');
+          btn.textContent = em;
+          btn.addEventListener('click', () => {
+            state.selectedEmoji = em;
+            dom.emojiPickerGrid.querySelectorAll('.emoji-choice').forEach((b) => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            SoundEngine.pop();
+          });
+          dom.emojiPickerGrid.appendChild(btn);
+        });
+
+        for (let h = 0; h < 24; h++) {
+          const opt = document.createElement('option');
+          const h12 = (h % 12) === 0 ? 12 : (h % 12);
+          const ampm = h >= 12 ? 'PM' : 'AM';
+          opt.value = String(h);
+          opt.textContent = `${pad2(h)} (${h12} ${ampm})`;
+          if (h === 17) opt.selected = true;
+          dom.customHourSelect.appendChild(opt);
+        }
+
+        for (let m = 0; m < 60; m += 5) {
+          const opt = document.createElement('option');
+          opt.value = String(m);
+          opt.textContent = `:${pad2(m)}`;
+          dom.customMinSelect.appendChild(opt);
+        }
+
+        dom.toggleCustomFormBtn.addEventListener('click', () => {
+          dom.customRoutineForm.classList.toggle('open');
+          SoundEngine.pop();
+        });
+
+        dom.cancelCustomBtn.addEventListener('click', () => {
+          dom.customRoutineForm.classList.remove('open');
+        });
+
+        dom.customRoutineForm.addEventListener('submit', (e) => {
+          e.preventDefault();
+          const title = dom.customTitleInput.value.trim();
+          if (!title) return;
+          const hour24 = Number(dom.customHourSelect.value);
+          const minute = Number(dom.customMinSelect.value);
+
+          const newItem = {
+            id: 'custom_' + Date.now(),
+            hour24,
+            minute,
+            title,
+            icon: state.selectedEmoji,
+            custom: true
+          };
+
+          state.routines.push(newItem);
+          saveRoutines(state.routines);
+          dom.customTitleInput.value = '';
+          dom.customRoutineForm.classList.remove('open');
+
+          const targetMins = hour24 * 60 + minute;
+          renderRoutineList();
+          renderDaySkyAndClock(targetMins);
+          SoundEngine.success();
+        });
+      }
+
+      /* ========================================================================
+         11. TRASCINAMENTO FLUIDO DELLE LANCETTE (ESPLORA & SFIDA)
+         ======================================================================== */
+      function getPointerAngleFromCenter(clientX, clientY) {
+        const rect = dom.svg.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        const dx = clientX - cx;
+        const dy = clientY - cy;
+        let deg = (Math.atan2(dx, -dy) * 180) / Math.PI;
+        if (deg < 0) deg += 360;
+        return deg;
+      }
+
+      function distanceToSegment(px, py, x1, y1, x2, y2) {
+        const l2 = (x2 - x1) ** 2 + (y2 - y1) ** 2;
+        if (l2 === 0) return Math.hypot(px - x1, py - y1);
+        let t = ((px - x1) * (x2 - x1) + (py - y1) * (y2 - y1)) / l2;
+        t = Math.max(0, Math.min(1, t));
+        return Math.hypot(px - (x1 + t * (x2 - x1)), py - (y1 + t * (y2 - y1)));
+      }
+
+      function getCurrentInteractiveHM() {
+        if (state.mode === 'explore') {
+          const h24 = Math.floor(state.totalMinutes / 60);
+          return { hour12: (h24 % 12) || 12, minute: state.totalMinutes % 60 };
+        }
+        return { hour12: state.gameHour, minute: state.gameMinute };
+      }
+
+      function detectClosestHand(clientX, clientY) {
+        const rect = dom.svg.getBoundingClientRect();
+        const svgX = ((clientX - rect.left) / rect.width) * 400;
+        const svgY = ((clientY - rect.top) / rect.height) * 400;
+        const { hour12, minute } = getCurrentInteractiveHM();
+
+        const minRad = ((minute * 6 - 90) * Math.PI) / 180;
+        const hourAngle = (hour12 % 12) * 30 + minute * 0.5;
+        const hourRad = ((hourAngle - 90) * Math.PI) / 180;
+
+        const distMin = distanceToSegment(svgX, svgY, 200, 200, 200 + 140 * Math.cos(minRad), 200 + 140 * Math.sin(minRad));
+        const distHour = distanceToSegment(svgX, svgY, 200, 200, 200 + 92 * Math.cos(hourRad), 200 + 92 * Math.sin(hourRad));
+
+        return distHour < 28 && distHour <= distMin ? 'hour' : 'minute';
+      }
+
+      function applyDragAngle(deg) {
+        const { hour12, minute } = getCurrentInteractiveHM();
+
+        if (state.draggingHand === 'minute') {
+          const targetMinute = Math.round(deg / 6) % 60;
+          const diff = ((targetMinute - minute + 90) % 60) - 30;
+          if (diff === 0) return;
+
+          // Micro-vibrazione tattile: 18ms sui multipli di 5, 8ms sui singoli minuti
+          triggerHaptic(targetMinute % 5 === 0 ? 18 : 8);
+
+          if (state.mode === 'explore') {
+            addExploreMinutes(diff, true);
+          } else {
+            const cur = (state.gameHour % 12) * 60 + state.gameMinute;
+            const next = ((cur + diff) % 720 + 720) % 720;
+            state.gameHour = Math.floor(next / 60) || 12;
+            state.gameMinute = next % 60;
+            SoundEngine.tick();
+            setClockHands(state.gameHour, state.gameMinute, null);
+          }
+        } else if (state.draggingHand === 'hour') {
+          const adjustedDeg = (deg - minute * 0.5 + 360) % 360;
+          const rawHour = Math.floor((adjustedDeg + 15) / 30) % 12;
+          const targetHour12 = rawHour === 0 ? 12 : rawHour;
+          if (targetHour12 === hour12) return;
+
+          triggerHaptic(18);
+
+          if (state.mode === 'explore') {
+            const isPM = Math.floor(state.totalMinutes / 60) >= 12;
+            const newH24 = (targetHour12 % 12) + (isPM ? 12 : 0);
+            state.totalMinutes = newH24 * 60 + minute;
+            SoundEngine.tick();
+            renderExploreMode();
+          } else {
+            state.gameHour = targetHour12;
+            SoundEngine.tick();
+            setClockHands(state.gameHour, state.gameMinute, null);
+          }
+        }
+      }
+
+      function isClockDraggable() {
+        return state.mode === 'explore' || (state.mode === 'play' && state.gameSubMode === 'challenge');
+      }
+
+      dom.svg.addEventListener('pointerdown', (e) => {
+        if (!isClockDraggable()) return;
+        e.preventDefault();
+        dom.svg.setPointerCapture(e.pointerId);
+
+        state.draggingHand = detectClosestHand(e.clientX, e.clientY);
+        dom.svg.classList.add('dragging');
+        (state.draggingHand === 'hour' ? dom.hourHandGroup : dom.minuteHandGroup).classList.add('active-drag');
+
+        applyDragAngle(getPointerAngleFromCenter(e.clientX, e.clientY));
+      });
+
+      dom.svg.addEventListener('pointermove', (e) => {
+        if (!state.draggingHand) return;
+        e.preventDefault();
+        applyDragAngle(getPointerAngleFromCenter(e.clientX, e.clientY));
+      });
+
+      function endDrag(e) {
+        if (!state.draggingHand) return;
+        if (e && e.pointerId !== undefined && dom.svg.hasPointerCapture(e.pointerId)) {
+          dom.svg.releasePointerCapture(e.pointerId);
+        }
+        state.draggingHand = null;
+        dom.svg.classList.remove('dragging');
+        dom.hourHandGroup.classList.remove('active-drag');
+        dom.minuteHandGroup.classList.remove('active-drag');
+      }
+
+      dom.svg.addEventListener('pointerup', endDrag);
+      dom.svg.addEventListener('pointercancel', endDrag);
+
+      /* ========================================================================
+         12. LOGICA DI GIOCO (QUIZ, SPOSTA LE LANCETTE & MIA GIORNATA) & STELLINE
+         ======================================================================== */
+      function pickRandomRoutine() {
+        const list = state.routines.length > 0 ? state.routines : DEFAULT_ROUTINES;
+        let chosen = list[0];
+        let safety = 0;
+        do {
+          chosen = list[Math.floor(Math.random() * list.length)];
+          safety++;
+        } while (list.length > 1 && chosen.id === state.lastRoutineId && safety < 15);
+        state.lastRoutineId = chosen.id;
+        return chosen;
+      }
+
+      function generateTimeForLevel(level, avoidH = null, avoidM = null) {
+        let h, m, safety = 0;
+        do {
+          h = Math.floor(Math.random() * 12) + 1;
+          if (level === 1) m = 0;
+          else if (level === 2) m = Math.random() < 0.5 ? 0 : 30;
+          else if (level === 3) m = [0, 15, 30, 45][Math.floor(Math.random() * 4)];
+          else if (level === 4) m = Math.floor(Math.random() * 12) * 5;
+          else m = Math.floor(Math.random() * 60);
+          safety++;
+        } while (h === avoidH && m === avoidM && safety < 20);
+        return { hour: h, minute: m };
+      }
+
+      function awardStar() {
+        state.stars += 1;
+        localStorage.setItem('orologio_stars_v1', String(state.stars));
+        dom.starCount.textContent = String(state.stars);
+        triggerHaptic([25, 40, 35]);
+
+        dom.starBadge.classList.remove('bump');
+        void dom.starBadge.offsetWidth;
+        dom.starBadge.classList.add('bump');
+        setTimeout(() => dom.starBadge.classList.remove('bump'), 300);
+
+        if (state.stars % 5 === 0) {
+          SoundEngine.milestone();
+          Confetti.launch();
+          dom.milestoneToast.textContent = `🦄 Evviva! Hai raccolto ${state.stars} stelline! ⭐`;
+          dom.milestoneToast.classList.add('show');
+          setTimeout(() => dom.milestoneToast.classList.remove('show'), 3200);
+        } else {
+          SoundEngine.success();
+        }
+      }
+
+      function showFeedback(el, msg, type) {
+        el.textContent = msg;
+        el.className = `feedback-box visible ${type}`;
+      }
+
+      function hideFeedback(el) {
+        el.className = 'feedback-box';
+        el.textContent = '';
+      }
+
+      function startNewQuizQuestion() {
+        state.quizLocked = false;
+        hideFeedback(dom.quizFeedback);
+
+        let next;
+        let routineObj = null;
+
+        if (state.level === 6) {
+          routineObj = pickRandomRoutine();
+          const h12 = (routineObj.hour24 % 12) === 0 ? 12 : (routineObj.hour24 % 12);
+          next = { hour: h12, minute: routineObj.minute };
+          dom.quizPromptHeader.textContent = `Guarda l'orologio: è l'ora di ${routineObj.icon} ${routineObj.title}! Che ore sono?`;
+        } else {
+          next = generateTimeForLevel(state.level, state.gameHour, state.gameMinute);
+          dom.quizPromptHeader.textContent = "Che ore sono sull'orologio?";
+        }
+
+        state.gameHour = next.hour;
+        state.gameMinute = next.minute;
+        setClockHands(next.hour, next.minute, null);
+
+        const pool = new Map();
+        const keyOf = (h, m) => `${pad2(h)}:${pad2(m)}`;
+        pool.set(keyOf(next.hour, next.minute), { hour: next.hour, minute: next.minute, correct: true });
+
+        const adjHour = next.minute >= 35 ? (next.hour % 12) + 1 : ((next.hour - 2 + 12) % 12) + 1;
+        pool.set(keyOf(adjHour, next.minute), { hour: adjHour, minute: next.minute, correct: false });
+
+        let attempts = 0;
+        while (pool.size < 4 && attempts < 60) {
+          attempts++;
+          const cand = generateTimeForLevel(state.level === 6 ? 4 : state.level);
+          const k = keyOf(cand.hour, cand.minute);
+          if (!pool.has(k)) pool.set(k, { hour: cand.hour, minute: cand.minute, correct: false });
+        }
+
+        const items = Array.from(pool.values()).sort(() => Math.random() - 0.5);
+        dom.quizOptionsGrid.innerHTML = '';
+
+        items.forEach((opt) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'quiz-option';
+          btn.innerHTML = `<span class="t-hour">${pad2(opt.hour)}</span><span class="t-sep">:</span><span class="t-min">${pad2(opt.minute)}</span>`;
+
+          btn.addEventListener('click', () => {
+            if (state.quizLocked || btn.disabled) return;
+            if (opt.correct) {
+              state.quizLocked = true;
+              btn.classList.add('correct');
+              awardStar();
+              const phrase = routineObj
+                ? ItalianTimeFormatter.format(opt.hour, opt.minute, routineObj.hour24).primary
+                : ItalianTimeFormatter.format(opt.hour, opt.minute).primary;
+              showFeedback(dom.quizFeedback, `⭐ Bravissima! ${phrase}!`, 'success');
+              setTimeout(() => {
+                if (state.mode === 'play' && state.gameSubMode === 'quiz') {
+                  if (state.level === 6) {
+                    switchGameSubMode('challenge');
+                  } else {
+                    startNewQuizQuestion();
+                  }
+                }
+              }, 1500);
+            } else {
+              btn.classList.add('wrong');
+              btn.disabled = true;
+              SoundEngine.gentleError();
+              showFeedback(dom.quizFeedback, 'Quasi! Guarda bene la fetta rosa delle ore e la lancetta blu dei minuti.', 'hint');
+            }
+          });
+          dom.quizOptionsGrid.appendChild(btn);
+        });
+      }
+
+      function startNewChallenge() {
+        state.challengeSolved = false;
+        hideFeedback(dom.challengeFeedback);
+
+        if (state.level === 6) {
+          const routine = pickRandomRoutine();
+          const h12 = (routine.hour24 % 12) === 0 ? 12 : (routine.hour24 % 12);
+          state.activeRoutineChallenge = routine;
+          state.targetHour = h12;
+          state.targetMinute = routine.minute;
+
+          dom.targetInstruction.textContent = `È l'ora di ${routine.title}! Sposta le lancette sull'orario giusto:`;
+          dom.targetRoutineBadge.style.display = 'inline-flex';
+          dom.targetRoutineBadge.textContent = `${routine.icon} ${routine.title}`;
+          dom.targetTimeLarge.style.display = 'none';
+          dom.targetPhraseHint.textContent = 'Tocca "💡 Indizio" se hai bisogno di aiuto';
+          dom.hintChallengeBtn.style.display = 'inline-block';
+        } else {
+          state.activeRoutineChallenge = null;
+          const target = generateTimeForLevel(state.level, state.targetHour, state.targetMinute);
+          state.targetHour = target.hour;
+          state.targetMinute = target.minute;
+
+          dom.targetInstruction.textContent = 'Sposta le lancette per impostare le:';
+          dom.targetRoutineBadge.style.display = 'none';
+          dom.targetTimeLarge.style.display = 'block';
+          dom.targetHourText.textContent = pad2(target.hour);
+          dom.targetMinText.textContent = pad2(target.minute);
+          dom.targetPhraseHint.textContent = ItalianTimeFormatter.format(target.hour, target.minute).primary;
+          dom.hintChallengeBtn.style.display = 'none';
+        }
+
+        const startPos = generateTimeForLevel(1, state.targetHour, state.targetMinute);
+        state.gameHour = startPos.hour;
+        state.gameMinute = 0;
+        setClockHands(state.gameHour, 0, null);
+      }
+
+      function checkChallengeAnswer() {
+        if (state.challengeSolved) return;
+        const hourOk = state.gameHour === state.targetHour;
+        const minOk = state.gameMinute === state.targetMinute;
+
+        if (hourOk && minOk) {
+          state.challengeSolved = true;
+          awardStar();
+          const r = state.activeRoutineChallenge;
+          const msg = r
+            ? `⭐ Perfetto! ${r.icon} ${r.title} è alle ${pad2(state.targetHour)}:${pad2(state.targetMinute)} (${r.hour24 >= 12 ? 'PM' : 'AM'})!`
+            : `⭐ Perfetto! Hai impostato esattamente le ${pad2(state.targetHour)}:${pad2(state.targetMinute)}!`;
+          showFeedback(dom.challengeFeedback, msg, 'success');
+          setTimeout(() => {
+            if (state.mode === 'play' && state.gameSubMode === 'challenge') {
+              if (state.level === 6) {
+                switchGameSubMode('quiz');
+              } else {
+                startNewChallenge();
+              }
+            }
+          }, 1600);
+          return;
+        }
+
+        SoundEngine.gentleError();
+        if (!hourOk && minOk) {
+          showFeedback(dom.challengeFeedback, 'I minuti sono giusti! Controlla la lancetta rosa e la fetta delle ore.', 'hint');
+        } else if (hourOk && !minOk) {
+          showFeedback(dom.challengeFeedback, "L'ora è giusta! Controlla la lancetta blu dei minuti.", 'hint');
+        } else {
+          showFeedback(dom.challengeFeedback, 'Riprova! Sistema sia la lancetta rosa (ore) che quella blu (minuti).', 'hint');
+        }
+      }
+
+      /* ========================================================================
+         13. CAMBIO MODALITÀ & COLLEGAMENTO EVENTI UI
+         ======================================================================== */
+      function switchMode(newMode) {
+        state.mode = newMode;
+        SoundEngine.pop();
+
+        dom.tabBtns.forEach((btn) => {
+          const active = btn.dataset.mode === newMode;
+          btn.classList.toggle('active', active);
+          btn.setAttribute('aria-selected', String(active));
+        });
+
+        const isDayMode = newMode === 'day';
+        dom.clockStage.classList.toggle('hidden', isDayMode);
+        dom.mainPanelCard.classList.toggle('hidden', isDayMode);
+        dom.dayStage.classList.toggle('active', isDayMode);
+
+        dom.panelLive.classList.toggle('active', newMode === 'live');
+        dom.panelExplore.classList.toggle('active', newMode === 'explore');
+        dom.panelPlay.classList.toggle('active', newMode === 'play');
+        dom.secondLegendPill.classList.toggle('hidden', newMode !== 'live');
+
+        if (newMode === 'live') {
+          dom.svg.classList.add('locked');
+          dom.clockDragHint.textContent = "L'orologio si muove in diretta con i secondi!";
+          updateLiveClock();
+        } else if (newMode === 'day') {
+          renderDaySkyAndClock(state.dayMinutes);
+          renderRoutineList();
+        } else if (newMode === 'explore') {
+          dom.svg.classList.remove('locked');
+          dom.clockDragHint.textContent = 'Trascina la lancetta rosa o blu per esplorare giorno e notte';
+          renderExploreMode();
+        } else if (newMode === 'play') {
+          switchGameSubMode(state.gameSubMode);
+        }
+      }
+
+      function switchGameSubMode(sub) {
+        state.gameSubMode = sub;
+        dom.subtabBtns.forEach((b) => b.classList.toggle('active', b.dataset.gamemode === sub));
+        dom.quizGameView.classList.toggle('active', sub === 'quiz');
+        dom.challengeGameView.classList.toggle('active', sub === 'challenge');
+
+        if (sub === 'quiz') {
+          dom.svg.classList.add('locked');
+          dom.clockDragHint.textContent = "Osserva le lancette e tocca l'ora giusta qui sotto";
+          startNewQuizQuestion();
+        } else {
+          dom.svg.classList.remove('locked');
+          dom.clockDragHint.textContent = 'Trascina le lancette per formare l’orario richiesto';
+          startNewChallenge();
+        }
+      }
+
+      dom.soundToggleBtn.addEventListener('click', () => {
+        const isMuted = SoundEngine.toggleMute();
+        dom.soundToggleBtn.classList.toggle('muted', isMuted);
+        dom.soundOnIcon.style.display = isMuted ? 'none' : 'block';
+        dom.soundOffIcon.style.display = isMuted ? 'block' : 'none';
+        if (!isMuted) SoundEngine.pop();
+      });
+
+      dom.liveTickToggleBtn.addEventListener('click', () => {
+        state.liveTickSound = !state.liveTickSound;
+        dom.liveTickToggleBtn.classList.toggle('active', state.liveTickSound);
+        dom.liveTickToggleBtn.textContent = state.liveTickSound ? 'Tic-tac 🔊' : 'Tic-tac 🔇';
+        if (state.liveTickSound) SoundEngine.tick();
+      });
+
+      dom.minuteHelperToggle.addEventListener('change', (e) => {
+        state.showMinuteHelper = e.target.checked;
+        dom.minuteHelpersLayer.classList.toggle('hidden-helper', !state.showMinuteHelper);
+        SoundEngine.pop();
+      });
+
+      dom.hourSliceToggle.addEventListener('change', (e) => {
+        state.showHourSlice = e.target.checked;
+        dom.hourSliceLayer.classList.toggle('hidden-slice', !state.showHourSlice);
+        SoundEngine.pop();
+      });
+
+      dom.tabBtns.forEach((btn) => btn.addEventListener('click', () => switchMode(btn.dataset.mode)));
+
+      dom.exploreAmPmBtn.addEventListener('click', () => {
+        addExploreMinutes(720, true);
+      });
+
+      document.querySelectorAll('.step-btn[data-delta]').forEach((btn) => {
+        btn.addEventListener('click', () => addExploreMinutes(Number(btn.dataset.delta), true));
+      });
+
+      dom.dayTimeSlider.addEventListener('input', (e) => {
+        renderDaySkyAndClock(Number(e.target.value));
+      });
+
+      document.querySelectorAll('.landmark-btn[data-day-mins]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          SoundEngine.pop();
+          renderDaySkyAndClock(Number(btn.dataset.dayMins));
+        });
+      });
+
+      dom.subtabBtns.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          SoundEngine.pop();
+          switchGameSubMode(btn.dataset.gamemode);
+        });
+      });
+
+      dom.diffBtns.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          state.level = Number(btn.dataset.level);
+          SoundEngine.pop();
+          dom.diffBtns.forEach((b) => b.classList.toggle('active', Number(b.dataset.level) === state.level));
+          switchGameSubMode(state.gameSubMode);
+        });
+      });
+
+      dom.checkChallengeBtn.addEventListener('click', checkChallengeAnswer);
+      dom.hintChallengeBtn.addEventListener('click', () => {
+        const r = state.activeRoutineChallenge;
+        if (!r) return;
+        SoundEngine.pop();
+        const ampm = r.hour24 >= 12 ? 'PM' : 'AM';
+        const phrase = ItalianTimeFormatter.format(state.targetHour, state.targetMinute, r.hour24).primary;
+        dom.targetPhraseHint.textContent = `💡 Indizio: ${pad2(state.targetHour)}:${pad2(state.targetMinute)} ${ampm} (${phrase})`;
+      });
+      dom.skipChallengeBtn.addEventListener('click', () => {
+        SoundEngine.pop();
+        startNewChallenge();
+      });
+
+      // Inizializzazione completa
+      buildClockDial();
+      initCustomActivityForm();
+      dom.starCount.textContent = String(state.stars);
+      const isMuted = SoundEngine.isMuted();
+      dom.soundToggleBtn.classList.toggle('muted', isMuted);
+      dom.soundOnIcon.style.display = isMuted ? 'none' : 'block';
+      dom.soundOffIcon.style.display = isMuted ? 'block' : 'none';
+
+      switchMode('live');
+      setInterval(updateLiveClock, 200);
+    })();
+  </script>
+</body>
+</html>
